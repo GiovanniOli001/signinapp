@@ -61,7 +61,6 @@ export async function handleVisitors(
              signed_in_at as signedInAt
       FROM visitors
       WHERE signed_out_at IS NULL
-        AND DATE(signed_in_at) = DATE('now')
       ORDER BY signed_in_at DESC
     `).all();
 
