@@ -2,7 +2,7 @@
 // AUTH ROUTES
 // ============================================
 
-import { Env, json, error, parseBody, createToken, verifyToken } from '../index';
+import { Env, json, error, parseBody, createToken, verifyToken, uuid } from '../index';
 
 interface LoginBody {
   password: string;
@@ -41,17 +41,17 @@ export async function handleAuth(
       return error('Password is required');
     }
 
-    // Get stored password hash from DB
+    // Get stored password hash from settings table
     const config = await env.DB.prepare(`
-      SELECT value FROM config WHERE key = 'admin_password_hash'
+      SELECT value FROM settings WHERE key = 'admin_password_hash'
     `).first<{ value: string }>();
 
     if (!config) {
       // First time - set default password "admin"
       const defaultHash = await hashPassword('admin');
       await env.DB.prepare(`
-        INSERT INTO config (key, value) VALUES ('admin_password_hash', ?)
-      `).bind(defaultHash).run();
+        INSERT INTO settings (id, key, value, updated_at) VALUES (?, 'admin_password_hash', ?, datetime('now'))
+      `).bind(uuid(), defaultHash).run();
 
       if (body.password === 'admin') {
         const token = createToken({ role: 'admin' }, env.JWT_SECRET || 'default-secret');
@@ -96,7 +96,7 @@ export async function handleAuth(
 
     // Verify current password
     const config = await env.DB.prepare(`
-      SELECT value FROM config WHERE key = 'admin_password_hash'
+      SELECT value FROM settings WHERE key = 'admin_password_hash'
     `).first<{ value: string }>();
 
     const storedHash = config?.value || await hashPassword('admin');
@@ -106,11 +106,13 @@ export async function handleAuth(
       return error('Current password is incorrect', 401);
     }
 
-    // Update password
+    // Update password (upsert)
     const newHash = await hashPassword(body.newPassword);
     await env.DB.prepare(`
-      INSERT OR REPLACE INTO config (key, value) VALUES ('admin_password_hash', ?)
-    `).bind(newHash).run();
+      INSERT INTO settings (id, key, value, updated_at)
+      VALUES (?, 'admin_password_hash', ?, datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
+    `).bind(uuid(), newHash, newHash).run();
 
     return json({ message: 'Password changed successfully' });
   }

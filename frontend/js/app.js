@@ -8,7 +8,6 @@
 // ============================================
 
 let currentVisitors = [];
-let allVisitors = [];
 let hosts = [];
 let settings = {
   logoUrl: '',
@@ -62,10 +61,13 @@ async function loadSettings() {
 function applyBranding() {
   // Apply logo
   const logoImg = document.getElementById('logoImage');
-  if (settings.logoUrl) {
-    logoImg.src = settings.logoUrl;
+  const logoUrl = settings.logoUrl;
+
+  if (logoUrl) {
+    logoImg.src = logoUrl;
     logoImg.style.display = 'block';
     logoImg.onerror = () => {
+      console.error('Failed to load logo:', logoUrl);
       logoImg.style.display = 'none';
     };
   } else {
@@ -74,27 +76,98 @@ function applyBranding() {
 
   // Apply background image
   const bgContainer = document.getElementById('backgroundImage');
-  if (settings.backgroundUrl) {
-    bgContainer.style.backgroundImage = `url(${settings.backgroundUrl})`;
+  const bgUrl = settings.backgroundUrl;
+
+  if (bgUrl) {
+    bgContainer.style.backgroundImage = `url(${bgUrl})`;
   } else {
     bgContainer.style.backgroundImage = 'none';
   }
 
-  // Update settings form fields if on settings screen
-  const logoInput = document.getElementById('logoUrl');
-  const bgInput = document.getElementById('backgroundUrl');
-  if (logoInput) logoInput.value = settings.logoUrl || '';
-  if (bgInput) bgInput.value = settings.backgroundUrl || '';
+  // Update settings form previews if elements exist
+  updateBrandingPreviews();
+}
+
+function updateBrandingPreviews() {
+  // Logo preview
+  const logoPreview = document.getElementById('logoPreview');
+  const logoPlaceholder = document.getElementById('logoPlaceholder');
+  const logoUrlInput = document.getElementById('logoUrl');
+
+  if (logoPreview && logoPlaceholder) {
+    if (settings.logoUrl) {
+      logoPreview.src = settings.logoUrl;
+      logoPreview.style.display = 'block';
+      logoPlaceholder.style.display = 'none';
+      logoPreview.onerror = () => {
+        logoPreview.style.display = 'none';
+        logoPlaceholder.style.display = 'flex';
+        logoPlaceholder.textContent = 'Failed to load image';
+      };
+    } else {
+      logoPreview.style.display = 'none';
+      logoPlaceholder.style.display = 'flex';
+      logoPlaceholder.textContent = 'No logo set';
+    }
+  }
+
+  if (logoUrlInput && !settings.logoUrl?.startsWith('data:')) {
+    logoUrlInput.value = settings.logoUrl || '';
+  }
+
+  // Background preview
+  const bgPreview = document.getElementById('backgroundPreview');
+  const bgPlaceholder = document.getElementById('backgroundPlaceholder');
+  const bgUrlInput = document.getElementById('backgroundUrl');
+
+  if (bgPreview && bgPlaceholder) {
+    if (settings.backgroundUrl) {
+      bgPreview.style.backgroundImage = `url(${settings.backgroundUrl})`;
+      bgPreview.style.display = 'block';
+      bgPlaceholder.style.display = 'none';
+    } else {
+      bgPreview.style.display = 'none';
+      bgPlaceholder.style.display = 'flex';
+      bgPlaceholder.textContent = 'No background set';
+    }
+  }
+
+  if (bgUrlInput && !settings.backgroundUrl?.startsWith('data:')) {
+    bgUrlInput.value = settings.backgroundUrl || '';
+  }
 }
 
 async function loadHosts() {
   try {
     const response = await hostsApi.getAll();
     hosts = response.hosts || [];
+    populateHostDropdown();
   } catch (error) {
     console.error('Failed to load hosts:', error);
     hosts = [];
+    populateHostDropdown();
   }
+}
+
+function populateHostDropdown() {
+  const select = document.getElementById('hostSelect');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Select...</option>';
+
+  // Add hosts from database
+  hosts.forEach(host => {
+    const option = document.createElement('option');
+    option.value = host.name;
+    option.textContent = host.name;
+    select.appendChild(option);
+  });
+
+  // Always add "Unsure" option at the end
+  const unsureOption = document.createElement('option');
+  unsureOption.value = 'Unsure';
+  unsureOption.textContent = 'Unsure';
+  select.appendChild(unsureOption);
 }
 
 function setupFormHandlers() {
@@ -137,10 +210,11 @@ async function handleSignIn(e) {
 
   const visitorName = document.getElementById('visitorName').value.trim();
   const visitorPhone = document.getElementById('visitorPhone').value.trim();
-  const hostName = document.getElementById('hostName').value.trim();
+  const hostSelect = document.getElementById('hostSelect');
+  const hostName = hostSelect.value;
 
   if (!visitorName || !hostName) {
-    showToast('Please fill in required fields', true);
+    showToast('Please fill in all required fields', true);
     return;
   }
 
@@ -295,7 +369,7 @@ function showSettingsScreen() {
   showScreen('settingsScreen');
   loadEvacuationList();
   loadHostsSettings();
-  applyBranding(); // Refresh branding inputs
+  updateBrandingPreviews();
 }
 
 function logoutSettings() {
@@ -322,6 +396,8 @@ function switchSettingsTab(tabName) {
     loadEvacuationList();
   } else if (tabName === 'hosts') {
     loadHostsSettings();
+  } else if (tabName === 'branding') {
+    updateBrandingPreviews();
   }
 }
 
@@ -363,28 +439,122 @@ async function loadEvacuationList() {
 }
 
 // ============================================
-// SETTINGS - BRANDING
+// SETTINGS - BRANDING (Upload + URL)
 // ============================================
 
-async function saveBranding() {
-  const logoUrl = document.getElementById('logoUrl').value.trim();
-  const backgroundUrl = document.getElementById('backgroundUrl').value.trim();
+async function handleLogoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Check file size (max 500KB for base64 storage)
+  if (file.size > 500 * 1024) {
+    showToast('Image too large. Max 500KB.', true);
+    return;
+  }
 
   try {
-    await settingsApi.save({
-      logoUrl,
-      backgroundUrl
-    });
-
-    settings.logoUrl = logoUrl;
-    settings.backgroundUrl = backgroundUrl;
-
-    applyBranding();
-    showToast('Branding saved');
-
+    const base64 = await fileToBase64(file);
+    await saveBrandingSetting('logoUrl', base64);
+    showToast('Logo uploaded');
   } catch (error) {
-    showToast('Failed to save branding', true);
+    showToast('Failed to upload logo', true);
   }
+
+  // Reset file input
+  event.target.value = '';
+}
+
+async function handleBackgroundUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Check file size (max 2MB for base64 storage)
+  if (file.size > 2 * 1024 * 1024) {
+    showToast('Image too large. Max 2MB.', true);
+    return;
+  }
+
+  try {
+    const base64 = await fileToBase64(file);
+    await saveBrandingSetting('backgroundUrl', base64);
+    showToast('Background uploaded');
+  } catch (error) {
+    showToast('Failed to upload background', true);
+  }
+
+  // Reset file input
+  event.target.value = '';
+}
+
+async function saveLogoUrl() {
+  const url = document.getElementById('logoUrl').value.trim();
+
+  if (!url) {
+    showToast('Enter a URL', true);
+    return;
+  }
+
+  try {
+    await saveBrandingSetting('logoUrl', url);
+    showToast('Logo URL saved');
+  } catch (error) {
+    showToast('Failed to save logo URL', true);
+  }
+}
+
+async function saveBackgroundUrl() {
+  const url = document.getElementById('backgroundUrl').value.trim();
+
+  if (!url) {
+    showToast('Enter a URL', true);
+    return;
+  }
+
+  try {
+    await saveBrandingSetting('backgroundUrl', url);
+    showToast('Background URL saved');
+  } catch (error) {
+    showToast('Failed to save background URL', true);
+  }
+}
+
+async function clearLogo() {
+  try {
+    await saveBrandingSetting('logoUrl', '');
+    document.getElementById('logoUrl').value = '';
+    showToast('Logo cleared');
+  } catch (error) {
+    showToast('Failed to clear logo', true);
+  }
+}
+
+async function clearBackground() {
+  try {
+    await saveBrandingSetting('backgroundUrl', '');
+    document.getElementById('backgroundUrl').value = '';
+    showToast('Background cleared');
+  } catch (error) {
+    showToast('Failed to clear background', true);
+  }
+}
+
+async function saveBrandingSetting(key, value) {
+  const data = {};
+  data[key] = value;
+
+  await settingsApi.save(data);
+
+  settings[key] = value;
+  applyBranding();
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 // ============================================
@@ -428,7 +598,7 @@ async function addHost() {
     await hostsApi.create(name);
     input.value = '';
     await loadHostsSettings();
-    await loadHosts(); // Refresh main hosts list
+    await loadHosts(); // Refresh main hosts list and dropdown
     showToast('Host added');
   } catch (error) {
     showToast('Failed to add host', true);
@@ -439,7 +609,7 @@ async function deleteHost(id) {
   try {
     await hostsApi.delete(id);
     await loadHostsSettings();
-    await loadHosts(); // Refresh main hosts list
+    await loadHosts(); // Refresh main hosts list and dropdown
     showToast('Host deleted');
   } catch (error) {
     showToast('Failed to delete host', true);
@@ -468,101 +638,6 @@ async function handleChangePassword(e) {
   } catch (error) {
     showToast('Failed to change password. Check current password.', true);
   }
-}
-
-// ============================================
-// ADMIN DASHBOARD
-// ============================================
-
-function showAdminDashboard() {
-  showScreen('adminScreen');
-
-  // Set default date range to today
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('adminDateFrom').value = today;
-  document.getElementById('adminDateTo').value = today;
-
-  loadAdminData();
-}
-
-function logoutAdmin() {
-  localStorage.removeItem('adminToken');
-  showScreen('welcomeScreen');
-}
-
-async function loadAdminData() {
-  const tbody = document.getElementById('adminTableBody');
-  const fromDate = document.getElementById('adminDateFrom').value;
-  const toDate = document.getElementById('adminDateTo').value;
-
-  if (!fromDate || !toDate) {
-    showToast('Please select date range', true);
-    return;
-  }
-
-  tbody.innerHTML = '<tr><td colspan="6" class="loading-state">Loading...</td></tr>';
-
-  try {
-    const response = await visitorApi.getByDateRange(fromDate, toDate);
-    allVisitors = response.visitors || [];
-
-    if (allVisitors.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No visitors found</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = allVisitors.map(visitor => `
-      <tr>
-        <td>${formatDateTime(visitor.signedInAt)}</td>
-        <td>${escapeHtml(visitor.name)}</td>
-        <td>${visitor.phone ? escapeHtml(visitor.phone) : '-'}</td>
-        <td>${visitor.hostName ? escapeHtml(visitor.hostName) : '-'}</td>
-        <td>
-          <span class="status-badge ${visitor.signedOutAt ? 'status-out' : 'status-in'}">
-            ${visitor.signedOutAt ? 'Signed Out' : 'Signed In'}
-          </span>
-        </td>
-        <td>${visitor.signedOutAt ? formatDateTime(visitor.signedOutAt) : '-'}</td>
-      </tr>
-    `).join('');
-
-  } catch (error) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Failed to load data</td></tr>';
-  }
-}
-
-function exportToCSV() {
-  if (!allVisitors || allVisitors.length === 0) {
-    showToast('No data to export', true);
-    return;
-  }
-
-  // Build CSV
-  const headers = ['Date/Time In', 'Visitor Name', 'Phone', 'Host', 'Status', 'Date/Time Out'];
-  const rows = allVisitors.map(v => [
-    formatDateTime(v.signedInAt),
-    v.name,
-    v.phone || '',
-    v.hostName || '',
-    v.signedOutAt ? 'Signed Out' : 'Signed In',
-    v.signedOutAt ? formatDateTime(v.signedOutAt) : ''
-  ]);
-
-  const csv = [
-    headers.join(','),
-    ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-  ].join('\n');
-
-  // Download
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `visitor-log-${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-
-  showToast('Report exported');
 }
 
 // ============================================

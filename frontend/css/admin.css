@@ -1,0 +1,446 @@
+/* ============================================
+   SIGN IN APP - ADMIN DASHBOARD STYLES
+   Desktop Application
+   ============================================ */
+
+/* ============================================
+   CSS Variables
+   ============================================ */
+:root {
+  --primary: #1e3a5f;
+  --primary-light: #2d4a6f;
+  --accent: #e8734a;
+  --success: #10b981;
+  --danger: #ef4444;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+}
+
+/* ============================================
+   Reset & Base
+   ============================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--gray-100);
+  color: var(--gray-900);
+  min-height: 100vh;
+}
+
+/* ============================================
+   Layout
+   ============================================ */
+.admin-app {
+  min-height: 100vh;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+/* ============================================
+   Login Screen
+   ============================================ */
+#loginScreen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+
+#loginScreen.active {
+  display: flex;
+}
+
+.login-container {
+  background: white;
+  padding: 48px;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.login-container h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.login-container p {
+  color: var(--gray-500);
+  margin-bottom: 32px;
+}
+
+/* ============================================
+   Dashboard Screen
+   ============================================ */
+.admin-header {
+  background: var(--primary);
+  color: white;
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.btn-logout {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-logout:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.admin-main {
+  padding: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ============================================
+   Stats Cards
+   ============================================ */
+.stats-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  max-width: 200px;
+}
+
+.stat-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stat-label {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin-top: 4px;
+}
+
+/* ============================================
+   Filters
+   ============================================ */
+.filters-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-group input,
+.filter-group select {
+  padding: 10px 14px;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  font-size: 14px;
+  min-width: 150px;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--primary-light);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--gray-300);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: var(--gray-50);
+  border-color: var(--primary);
+}
+
+.btn-action {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-action:hover {
+  opacity: 0.9;
+}
+
+/* ============================================
+   Table
+   ============================================ */
+.table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: var(--gray-50);
+}
+
+th {
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+td {
+  padding: 14px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover {
+  background: var(--gray-50);
+}
+
+.loading,
+.empty,
+.error {
+  text-align: center;
+  padding: 48px 16px !important;
+  color: var(--gray-500);
+}
+
+.error {
+  color: var(--danger);
+}
+
+/* ============================================
+   Status Badge
+   ============================================ */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-in {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-out {
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+
+/* ============================================
+   Form
+   ============================================ */
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+}
+
+.login-container .btn-primary {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+}
+
+/* ============================================
+   Toast Notifications
+   ============================================ */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease;
+}
+
+.toast.success {
+  background: var(--success);
+  color: white;
+}
+
+.toast.error {
+  background: var(--danger);
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 768px) {
+  .admin-main {
+    padding: 16px;
+  }
+
+  .stats-row {
+    flex-direction: column;
+  }
+
+  .stat-card {
+    max-width: none;
+  }
+
+  .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-group input,
+  .filter-group select {
+    width: 100%;
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  table {
+    min-width: 800px;
+  }
+}

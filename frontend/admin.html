@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visitor Log - Admin</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-app">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+      <div class="login-container">
+        <h1>Visitor Log</h1>
+        <p>Admin Dashboard</p>
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" required placeholder="Enter admin password">
+          </div>
+          <button type="submit" class="btn-primary">Login</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboardScreen" class="screen">
+      <header class="admin-header">
+        <h1>Visitor Log</h1>
+        <button type="button" class="btn-logout" onclick="logout()">Logout</button>
+      </header>
+
+      <main class="admin-main">
+        <!-- Stats Cards -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-value" id="statSignedIn">0</div>
+            <div class="stat-label">Currently Signed In</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statToday">0</div>
+            <div class="stat-label">Today's Visitors</div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-row">
+          <div class="filter-group">
+            <label for="dateFrom">From</label>
+            <input type="date" id="dateFrom">
+          </div>
+          <div class="filter-group">
+            <label for="dateTo">To</label>
+            <input type="date" id="dateTo">
+          </div>
+          <div class="filter-group">
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter">
+              <option value="all">All</option>
+              <option value="signed-in">Signed In</option>
+              <option value="signed-out">Signed Out</option>
+            </select>
+          </div>
+          <button type="button" class="btn-primary" onclick="loadVisitors()">Apply</button>
+          <button type="button" class="btn-secondary" onclick="exportToCSV()">Export CSV</button>
+        </div>
+
+        <!-- Visitors Table -->
+        <div class="table-container">
+          <table id="visitorsTable">
+            <thead>
+              <tr>
+                <th>Date/Time In</th>
+                <th>Visitor Name</th>
+                <th>Phone</th>
+                <th>Host</th>
+                <th>Status</th>
+                <th>Date/Time Out</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="visitorsTableBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

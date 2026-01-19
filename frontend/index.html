@@ -75,16 +75,11 @@
         </div>
 
         <div class="form-group">
-          <label for="hostName">Who are you here to see?</label>
-          <input
-            type="text"
-            id="hostName"
-            name="hostName"
-            required
-            autocomplete="off"
-            autocapitalize="words"
-            placeholder="Enter the person's name"
-          >
+          <label for="hostSelect">Who are you here to see?</label>
+          <select id="hostSelect" name="hostSelect" required>
+            <option value="">Select...</option>
+            <!-- Populated by JS -->
+          </select>
         </div>
 
         <div class="form-actions">
@@ -207,15 +202,44 @@
 
       <!-- Branding Tab -->
       <div id="brandingTab" class="settings-content">
-        <div class="setting-item">
-          <label for="logoUrl">Logo URL</label>
-          <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
-          <button type="button" class="btn-small" onclick="saveBranding()">Save</button>
+        <!-- Logo Section -->
+        <div class="branding-section">
+          <h3>Logo</h3>
+          <div class="branding-preview">
+            <img id="logoPreview" src="" alt="Logo preview" style="display: none;">
+            <div id="logoPlaceholder" class="preview-placeholder">No logo set</div>
+          </div>
+          <div class="branding-options">
+            <div class="upload-option">
+              <label for="logoFile" class="btn-small btn-upload">Upload Image</label>
+              <input type="file" id="logoFile" accept="image/*" onchange="handleLogoUpload(event)" style="display: none;">
+            </div>
+            <div class="url-option">
+              <input type="url" id="logoUrl" placeholder="Or paste image URL...">
+              <button type="button" class="btn-small" onclick="saveLogoUrl()">Use URL</button>
+            </div>
+            <button type="button" class="btn-small btn-danger" onclick="clearLogo()">Clear Logo</button>
+          </div>
         </div>
-        <div class="setting-item">
-          <label for="backgroundUrl">Background Image URL</label>
-          <input type="url" id="backgroundUrl" placeholder="https://example.com/background.jpg">
-          <button type="button" class="btn-small" onclick="saveBranding()">Save</button>
+
+        <!-- Background Section -->
+        <div class="branding-section">
+          <h3>Background Image</h3>
+          <div class="branding-preview background-preview">
+            <div id="backgroundPreview" style="display: none;"></div>
+            <div id="backgroundPlaceholder" class="preview-placeholder">No background set</div>
+          </div>
+          <div class="branding-options">
+            <div class="upload-option">
+              <label for="backgroundFile" class="btn-small btn-upload">Upload Image</label>
+              <input type="file" id="backgroundFile" accept="image/*" onchange="handleBackgroundUpload(event)" style="display: none;">
+            </div>
+            <div class="url-option">
+              <input type="url" id="backgroundUrl" placeholder="Or paste image URL...">
+              <button type="button" class="btn-small" onclick="saveBackgroundUrl()">Use URL</button>
+            </div>
+            <button type="button" class="btn-small btn-danger" onclick="clearBackground()">Clear Background</button>
+          </div>
         </div>
       </div>
 
@@ -244,47 +268,6 @@
           </div>
           <button type="submit" class="btn-small">Change Password</button>
         </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== ADMIN DASHBOARD ==================== -->
-  <div id="adminScreen" class="screen">
-    <div class="admin-container">
-      <div class="admin-header">
-        <h1>Visitor Log</h1>
-        <button type="button" class="btn-text" onclick="logoutAdmin()">Exit</button>
-      </div>
-
-      <div class="admin-filters">
-        <div class="filter-group">
-          <label for="adminDateFrom">From</label>
-          <input type="date" id="adminDateFrom">
-        </div>
-        <div class="filter-group">
-          <label for="adminDateTo">To</label>
-          <input type="date" id="adminDateTo">
-        </div>
-        <button type="button" class="btn-small" onclick="loadAdminData()">Filter</button>
-        <button type="button" class="btn-small btn-secondary" onclick="exportToCSV()">Export CSV</button>
-      </div>
-
-      <div class="admin-table-container">
-        <table id="adminTable" class="admin-table">
-          <thead>
-            <tr>
-              <th>Date/Time In</th>
-              <th>Visitor Name</th>
-              <th>Phone</th>
-              <th>Host</th>
-              <th>Status</th>
-              <th>Date/Time Out</th>
-            </tr>
-          </thead>
-          <tbody id="adminTableBody">
-            <!-- Populated by JS -->
-          </tbody>
-        </table>
       </div>
     </div>
   </div>

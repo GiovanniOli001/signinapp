@@ -749,6 +749,114 @@ input, select, textarea {
   background: var(--gray-200);
 }
 
+.btn-small.btn-upload {
+  background: var(--teal);
+  color: var(--white);
+  cursor: pointer;
+  display: inline-block;
+}
+
+.btn-small.btn-upload:hover {
+  opacity: 0.9;
+}
+
+.btn-small.btn-danger {
+  background: var(--danger);
+  color: var(--white);
+}
+
+.btn-small.btn-danger:hover {
+  opacity: 0.9;
+}
+
+/* Branding Section */
+.branding-section {
+  margin-bottom: 40px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.branding-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.branding-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: 16px;
+}
+
+.branding-preview {
+  width: 200px;
+  height: 120px;
+  background: var(--gray-100);
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.branding-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.branding-preview.background-preview {
+  width: 100%;
+  max-width: 400px;
+  height: 150px;
+}
+
+.branding-preview.background-preview #backgroundPreview {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
+
+.preview-placeholder {
+  font-size: 0.9rem;
+  color: var(--gray-400);
+  text-align: center;
+}
+
+.branding-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.upload-option {
+  display: inline-block;
+}
+
+.url-option {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 250px;
+}
+
+.url-option input {
+  flex: 1;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+}
+
+.url-option input:focus {
+  outline: none;
+  border-color: var(--navy);
+}
+
 /* ============================================
    ADMIN SCREEN
    ============================================ */
