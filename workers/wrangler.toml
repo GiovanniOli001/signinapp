@@ -1,0 +1,14 @@
+# Sign In App - Cloudflare Workers Configuration
+
+name = "signin-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "signin-db"
+database_id = "ab7c7d8a-50a8-4bec-8a9a-f363f1aeb151"
+
+# Environment variables (set via wrangler secret)
+# ADMIN_PASSWORD_HASH - bcrypt hash of admin password

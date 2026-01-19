@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sign In">
+
+  <title>Sign In</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <!-- Kiosk Sign In Screen -->
+  <div id="kioskScreen" class="screen active">
+    <div class="kiosk-container">
+      <div class="kiosk-header">
+        <h1>Welcome</h1>
+        <p>Please sign in below</p>
+      </div>
+
+      <form id="signInForm" class="kiosk-form">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" name="firstName" required autocomplete="off" placeholder="Enter your first name">
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" name="lastName" required autocomplete="off" placeholder="Enter your last name">
+        </div>
+
+        <div class="form-group">
+          <label for="visitReason">Reason for Visit</label>
+          <select id="visitReason" name="visitReason" required>
+            <option value="">Select a reason...</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-large">
+          Sign In
+        </button>
+      </form>
+
+      <div class="kiosk-footer">
+        <button type="button" class="btn btn-link" onclick="showSignOutModal()">
+          Already signed in? Tap here to sign out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sign In Success Screen -->
+  <div id="successScreen" class="screen">
+    <div class="success-container">
+      <div class="success-icon">✓</div>
+      <h1>You're Signed In!</h1>
+      <p id="successMessage">Thanks for signing in.</p>
+      <p class="success-subtitle">Please take a seat and we'll be with you shortly.</p>
+      <div class="countdown">Returning to sign in screen in <span id="countdown">5</span>s</div>
+    </div>
+  </div>
+
+  <!-- Sign Out Success Screen -->
+  <div id="signOutSuccessScreen" class="screen">
+    <div class="success-container signout">
+      <div class="success-icon">👋</div>
+      <h1>You're Signed Out!</h1>
+      <p>Thank you for visiting. Have a great day!</p>
+      <div class="countdown">Returning to sign in screen in <span id="signoutCountdown">5</span>s</div>
+    </div>
+  </div>
+
+  <!-- Admin Login Screen -->
+  <div id="adminLoginScreen" class="screen">
+    <div class="admin-login-container">
+      <button type="button" class="btn-back" onclick="showKiosk()">← Back</button>
+      <h1>Admin Login</h1>
+      <form id="adminLoginForm" class="admin-form">
+        <div class="form-group">
+          <label for="adminPassword">Password</label>
+          <input type="password" id="adminPassword" name="password" required placeholder="Enter admin password">
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div id="adminScreen" class="screen">
+    <div class="admin-container">
+      <div class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <button type="button" class="btn btn-secondary" onclick="logout()">Logout</button>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="tab-btn active" data-tab="today" onclick="switchAdminTab('today')">Today's Visitors</button>
+        <button class="tab-btn" data-tab="reports" onclick="switchAdminTab('reports')">Reports</button>
+        <button class="tab-btn" data-tab="settings" onclick="switchAdminTab('settings')">Settings</button>
+      </div>
+
+      <!-- Today's Visitors Tab -->
+      <div id="todayTab" class="tab-content active">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-number" id="statSignedIn">0</div>
+            <div class="stat-label">Currently Signed In</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statTotal">0</div>
+            <div class="stat-label">Total Today</div>
+          </div>
+        </div>
+
+        <div class="visitor-list-header">
+          <h2>Currently Signed In</h2>
+          <button type="button" class="btn btn-secondary btn-small" onclick="refreshVisitors()">Refresh</button>
+        </div>
+        <div id="visitorList" class="visitor-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Reports Tab -->
+      <div id="reportsTab" class="tab-content">
+        <div class="report-filters">
+          <div class="form-group">
+            <label for="reportDateFrom">From</label>
+            <input type="date" id="reportDateFrom">
+          </div>
+          <div class="form-group">
+            <label for="reportDateTo">To</label>
+            <input type="date" id="reportDateTo">
+          </div>
+          <button type="button" class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+          <button type="button" class="btn btn-secondary" onclick="exportReport()">Export CSV</button>
+        </div>
+
+        <div id="reportResults" class="report-results">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Settings Tab -->
+      <div id="settingsTab" class="tab-content">
+        <div class="settings-section">
+          <h2>Visit Reasons</h2>
+          <p>Manage the dropdown options for visit reasons.</p>
+          <div id="reasonsList" class="reasons-list">
+            <!-- Populated by JS -->
+          </div>
+          <div class="add-reason-form">
+            <input type="text" id="newReasonInput" placeholder="New reason...">
+            <button type="button" class="btn btn-primary" onclick="addReason()">Add</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Change Password</h2>
+          <form id="changePasswordForm" class="password-form">
+            <div class="form-group">
+              <label for="currentPassword">Current Password</label>
+              <input type="password" id="currentPassword" required>
+            </div>
+            <div class="form-group">
+              <label for="newPassword">New Password</label>
+              <input type="password" id="newPassword" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Change Password</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sign Out Modal -->
+  <div id="signOutModal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Sign Out</h2>
+        <button type="button" class="modal-close" onclick="closeSignOutModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Select your name to sign out:</p>
+        <div id="signOutList" class="signout-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Hidden admin access trigger (triple tap on header) -->
+  <div id="adminTrigger" class="admin-trigger" onclick="handleAdminTrigger()"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
