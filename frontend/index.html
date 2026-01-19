@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#1e3a5f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Visitor">
+  <meta name="apple-mobile-web-app-title" content="Sign In">
+  <meta name="mobile-web-app-capable" content="yes">
 
   <title>Visitor Sign In</title>
 
@@ -145,6 +146,23 @@
 
   <!-- Toast Container -->
   <div id="toastContainer" class="toast-container"></div>
+
+  <!-- PWA Install Banner -->
+  <div id="installBanner" class="install-banner" style="display: none;">
+    <div class="install-banner-content">
+      <div class="install-banner-icon">
+        <img src="icons/icon-192.png" alt="App Icon">
+      </div>
+      <div class="install-banner-text">
+        <strong>Install Sign In App</strong>
+        <span>Add to your home screen for quick access</span>
+      </div>
+      <div class="install-banner-actions">
+        <button type="button" class="install-btn-dismiss" onclick="dismissInstallBanner()">Not now</button>
+        <button type="button" class="install-btn-install" onclick="installApp()">Install</button>
+      </div>
+    </div>
+  </div>
 
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>

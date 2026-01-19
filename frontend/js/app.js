@@ -15,6 +15,7 @@ let settings = {
 };
 let countdownTimer = null;
 let selectedVisitorForSignOut = null;
+let deferredInstallPrompt = null;
 
 // ============================================
 // INITIALIZATION
@@ -330,7 +331,7 @@ function formatTime(isoString) {
 }
 
 // ============================================
-// PWA / SERVICE WORKER
+// PWA / SERVICE WORKER / INSTALL
 // ============================================
 
 function registerServiceWorker() {
@@ -339,4 +340,82 @@ function registerServiceWorker() {
       .then(reg => console.log('Service Worker registered'))
       .catch(err => console.log('Service Worker registration failed:', err));
   }
+}
+
+// Listen for the beforeinstallprompt event
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent the default mini-infobar
+  e.preventDefault();
+
+  // Store the event for later use
+  deferredInstallPrompt = e;
+
+  // Check if user has dismissed the banner recently
+  const dismissed = localStorage.getItem('installBannerDismissed');
+  if (dismissed) {
+    const dismissedTime = parseInt(dismissed, 10);
+    const hoursSinceDismissed = (Date.now() - dismissedTime) / (1000 * 60 * 60);
+    // Don't show again for 24 hours after dismissal
+    if (hoursSinceDismissed < 24) {
+      return;
+    }
+  }
+
+  // Show the install banner
+  showInstallBanner();
+});
+
+// Listen for successful install
+window.addEventListener('appinstalled', () => {
+  console.log('PWA was installed');
+  hideInstallBanner();
+  deferredInstallPrompt = null;
+  // Clear any dismissal tracking
+  localStorage.removeItem('installBannerDismissed');
+});
+
+function showInstallBanner() {
+  const banner = document.getElementById('installBanner');
+  if (banner) {
+    banner.style.display = 'flex';
+  }
+}
+
+function hideInstallBanner() {
+  const banner = document.getElementById('installBanner');
+  if (banner) {
+    banner.style.display = 'none';
+  }
+}
+
+function dismissInstallBanner() {
+  hideInstallBanner();
+  // Remember dismissal for 24 hours
+  localStorage.setItem('installBannerDismissed', Date.now().toString());
+}
+
+async function installApp() {
+  if (!deferredInstallPrompt) {
+    console.log('No install prompt available');
+    return;
+  }
+
+  // Show the install prompt
+  deferredInstallPrompt.prompt();
+
+  // Wait for the user to respond to the prompt
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  console.log(`User response to install prompt: ${outcome}`);
+
+  // Clear the deferred prompt
+  deferredInstallPrompt = null;
+
+  // Hide the banner
+  hideInstallBanner();
+}
+
+// Check if running as installed PWA
+function isRunningAsPWA() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
 }

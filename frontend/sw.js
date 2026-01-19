@@ -1,6 +1,6 @@
 // Service Worker for Sign In App PWA
 
-const CACHE_NAME = 'signin-app-v1';
+const CACHE_NAME = 'signin-app-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
