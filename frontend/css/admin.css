@@ -38,12 +38,8 @@ body {
 }
 
 /* ============================================
-   Layout
+   Screen Management
    ============================================ */
-.admin-app {
-  min-height: 100vh;
-}
-
 .screen {
   display: none;
 }
@@ -52,19 +48,21 @@ body {
   display: block;
 }
 
+/* Login screen needs flex for centering */
+#loginScreen.active {
+  display: flex;
+}
+
 /* ============================================
    Login Screen
    ============================================ */
 #loginScreen {
-  min-height: 100vh;
-  display: flex;
+  position: fixed;
+  inset: 0;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-}
-
-#loginScreen.active {
-  display: flex;
+  z-index: 1000;
 }
 
 .login-container {
@@ -92,6 +90,10 @@ body {
 /* ============================================
    Dashboard Screen
    ============================================ */
+#dashboardScreen {
+  min-height: 100vh;
+}
+
 .admin-header {
   background: var(--primary);
   color: white;
@@ -290,7 +292,7 @@ tr:last-child td {
   border-bottom: none;
 }
 
-tr:hover {
+tbody tr:hover {
   background: var(--gray-50);
 }
 
