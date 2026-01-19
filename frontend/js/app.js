@@ -204,23 +204,28 @@ async function loadSignedInVisitors() {
   const list = document.getElementById('signOutList');
   if (!list) return;
 
-  list.innerHTML = '<div class="loading-state">Loading...</div>';
-
   try {
     const response = await visitorApi.getSignedIn();
     currentVisitors = response.visitors || [];
 
-    renderSignOutList(currentVisitors);
+    // Don't show list - user must search for privacy
+    renderSignOutList([], false);
   } catch (error) {
-    list.innerHTML = '<div class="empty-state">Failed to load visitors</div>';
+    list.innerHTML = '<div class="empty-state">Please enter your name to sign out</div>';
   }
 }
 
-function renderSignOutList(visitors) {
+function renderSignOutList(visitors, isSearchResult = false) {
   const list = document.getElementById('signOutList');
 
+  // Only show results if user has searched
+  if (!isSearchResult) {
+    list.innerHTML = '<div class="empty-state">Enter your name above to sign out</div>';
+    return;
+  }
+
   if (visitors.length === 0) {
-    list.innerHTML = '<div class="empty-state">No one is currently signed in</div>';
+    list.innerHTML = '<div class="empty-state">No matching visitor found</div>';
     return;
   }
 
@@ -235,8 +240,9 @@ function renderSignOutList(visitors) {
 function filterSignOutList() {
   const searchTerm = document.getElementById('signOutSearch').value.toLowerCase().trim();
 
-  if (!searchTerm) {
-    renderSignOutList(currentVisitors);
+  // Require at least 2 characters to search for privacy
+  if (!searchTerm || searchTerm.length < 2) {
+    renderSignOutList([], false);
     return;
   }
 
@@ -244,7 +250,7 @@ function filterSignOutList() {
     v.name.toLowerCase().includes(searchTerm)
   );
 
-  renderSignOutList(filtered);
+  renderSignOutList(filtered, true);
 }
 
 function selectVisitorForSignOut(visitorId) {
