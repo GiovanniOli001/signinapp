@@ -1,5 +1,6 @@
 // ============================================
 // SIGN IN APP - API CLIENT
+// VitalHub Ipswich Visitor Kiosk
 // ============================================
 
 const API_BASE = 'https://signin-api.oliveri-john001.workers.dev';
@@ -86,33 +87,56 @@ const visitorApi = {
 };
 
 // ============================================
-// REASONS API
+// HOSTS API
 // ============================================
 
-const reasonsApi = {
+const hostsApi = {
   /**
-   * Get all visit reasons
+   * Get all hosts
    */
   async getAll() {
-    return apiRequest('/api/reasons');
+    return apiRequest('/api/hosts');
   },
 
   /**
-   * Create a visit reason
+   * Create a host
    */
   async create(name) {
-    return apiRequest('/api/reasons', {
+    return apiRequest('/api/hosts', {
       method: 'POST',
       body: JSON.stringify({ name })
     });
   },
 
   /**
-   * Delete a visit reason
+   * Delete a host
    */
   async delete(id) {
-    return apiRequest(`/api/reasons/${id}`, {
+    return apiRequest(`/api/hosts/${id}`, {
       method: 'DELETE'
+    });
+  }
+};
+
+// ============================================
+// SETTINGS API
+// ============================================
+
+const settingsApi = {
+  /**
+   * Get settings (branding)
+   */
+  async get() {
+    return apiRequest('/api/settings');
+  },
+
+  /**
+   * Save settings (branding)
+   */
+  async save(data) {
+    return apiRequest('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify(data)
     });
   }
 };

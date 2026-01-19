@@ -5,10 +5,9 @@
 import { Env, json, error, uuid, parseBody } from '../index';
 
 interface SignInBody {
-  firstName: string;
-  lastName: string;
-  reasonId: string;
-  reasonName: string;
+  name: string;
+  phone?: string | null;
+  hostName: string;
 }
 
 export async function handleVisitors(
@@ -23,17 +22,17 @@ export async function handleVisitors(
   if (path === '/api/visitors/signin' && method === 'POST') {
     const body = await parseBody<SignInBody>(request);
 
-    if (!body.firstName || !body.lastName || !body.reasonId) {
-      return error('Missing required fields');
+    if (!body.name || !body.hostName) {
+      return error('Name and host are required');
     }
 
     const id = uuid();
     const now = new Date().toISOString();
 
     await env.DB.prepare(`
-      INSERT INTO visitors (id, first_name, last_name, reason_id, reason_name, signed_in_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(id, body.firstName, body.lastName, body.reasonId, body.reasonName, now).run();
+      INSERT INTO visitors (id, name, phone, host_name, signed_in_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(id, body.name.trim(), body.phone || null, body.hostName.trim(), now).run();
 
     return json({ id, message: 'Signed in successfully' }, 201);
   }
@@ -58,8 +57,7 @@ export async function handleVisitors(
   // GET /api/visitors/signed-in - Get currently signed in visitors
   if (path === '/api/visitors/signed-in' && method === 'GET') {
     const result = await env.DB.prepare(`
-      SELECT id, first_name as firstName, last_name as lastName,
-             reason_id as reasonId, reason_name as reasonName,
+      SELECT id, name, phone, host_name as hostName,
              signed_in_at as signedInAt
       FROM visitors
       WHERE signed_out_at IS NULL
@@ -98,8 +96,7 @@ export async function handleVisitors(
     }
 
     const result = await env.DB.prepare(`
-      SELECT id, first_name as firstName, last_name as lastName,
-             reason_id as reasonId, reason_name as reasonName,
+      SELECT id, name, phone, host_name as hostName,
              signed_in_at as signedInAt, signed_out_at as signedOutAt
       FROM visitors
       WHERE DATE(signed_in_at) >= ? AND DATE(signed_in_at) <= ?

@@ -1,10 +1,14 @@
 -- ============================================
--- SIGN IN APP - DATABASE SCHEMA
+-- MIGRATION TO VERSION 2.0
 -- VitalHub Ipswich Visitor Kiosk
--- Version 2.0
 -- ============================================
 
--- Settings table for branding and config
+-- Drop old tables (clean slate for new schema)
+DROP TABLE IF EXISTS visit_reasons;
+DROP TABLE IF EXISTS visitors;
+DROP TABLE IF EXISTS config;
+
+-- Create new settings table
 CREATE TABLE IF NOT EXISTS settings (
   id TEXT PRIMARY KEY,
   key TEXT NOT NULL UNIQUE,
@@ -12,7 +16,7 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at TEXT DEFAULT (datetime('now'))
 );
 
--- Hosts (people visitors can visit)
+-- Create hosts table
 CREATE TABLE IF NOT EXISTS hosts (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -20,7 +24,7 @@ CREATE TABLE IF NOT EXISTS hosts (
   deleted_at TEXT
 );
 
--- Visitors log (simplified schema)
+-- Create new visitors table with simplified schema
 CREATE TABLE IF NOT EXISTS visitors (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -31,7 +35,7 @@ CREATE TABLE IF NOT EXISTS visitors (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
--- Indexes for performance
+-- Create indexes
 CREATE INDEX IF NOT EXISTS idx_visitors_signed_in ON visitors(signed_in_at);
 CREATE INDEX IF NOT EXISTS idx_visitors_signed_out ON visitors(signed_out_at);
 CREATE INDEX IF NOT EXISTS idx_visitors_date ON visitors(DATE(signed_in_at));

@@ -1,9 +1,11 @@
 // ============================================
 // SIGN IN APP - API
+// VitalHub Ipswich Visitor Kiosk
 // ============================================
 
 import { handleVisitors } from './routes/visitors';
-import { handleReasons } from './routes/reasons';
+import { handleHosts } from './routes/hosts';
+import { handleSettings } from './routes/settings';
 import { handleAuth } from './routes/auth';
 
 export interface Env {
@@ -109,12 +111,14 @@ export default {
       // Route to handlers
       if (path.startsWith('/api/visitors')) {
         response = await handleVisitors(request, env, path);
-      } else if (path.startsWith('/api/reasons')) {
-        response = await handleReasons(request, env, path);
+      } else if (path.startsWith('/api/hosts')) {
+        response = await handleHosts(request, env, path);
+      } else if (path.startsWith('/api/settings')) {
+        response = await handleSettings(request, env, path);
       } else if (path.startsWith('/api/auth')) {
         response = await handleAuth(request, env, path);
       } else {
-        response = json({ message: 'Sign In API', version: '1.0.0' });
+        response = json({ message: 'Sign In API - VitalHub Ipswich', version: '2.0.0' });
       }
 
       return addCorsHeaders(response);

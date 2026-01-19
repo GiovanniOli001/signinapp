@@ -1,16 +1,23 @@
 // ============================================
 // SIGN IN APP - MAIN APPLICATION
+// VitalHub Ipswich Visitor Kiosk
 // ============================================
 
 // ============================================
 // STATE
 // ============================================
 
-let visitReasons = [];
 let currentVisitors = [];
-let adminTapCount = 0;
-let adminTapTimer = null;
+let allVisitors = [];
+let hosts = [];
+let settings = {
+  logoUrl: '',
+  backgroundUrl: ''
+};
+let settingsTapCount = 0;
+let settingsTapTimer = null;
 let countdownTimer = null;
+let selectedVisitorForSignOut = null;
 
 // ============================================
 // INITIALIZATION
@@ -21,96 +28,141 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function init() {
-  // Load visit reasons
-  await loadVisitReasons();
+  // Load settings (branding)
+  await loadSettings();
+
+  // Load hosts for autocomplete
+  await loadHosts();
 
   // Set up form handlers
   setupFormHandlers();
 
-  // Check if admin is logged in
-  checkAdminSession();
+  // Set up settings trigger (discrete corner tap)
+  setupSettingsTrigger();
+
+  // Load signed-in visitors for sign-out screen
+  await loadSignedInVisitors();
 
   // Register service worker for PWA
   registerServiceWorker();
 }
 
-async function loadVisitReasons() {
+async function loadSettings() {
   try {
-    const response = await reasonsApi.getAll();
-    visitReasons = response.reasons || [];
-    populateReasonDropdown();
+    const response = await settingsApi.get();
+    settings = response.settings || {};
+    applyBranding();
   } catch (error) {
-    console.error('Failed to load visit reasons:', error);
-    // Use defaults if API fails
-    visitReasons = [
-      { id: '1', name: 'Appointment' },
-      { id: '2', name: 'Walk-in' },
-      { id: '3', name: 'Follow-up' },
-      { id: '4', name: 'Other' }
-    ];
-    populateReasonDropdown();
+    console.error('Failed to load settings:', error);
+    // Use defaults
+    applyBranding();
   }
 }
 
-function populateReasonDropdown() {
-  const select = document.getElementById('visitReason');
-  select.innerHTML = '<option value="">Select a reason...</option>';
+function applyBranding() {
+  // Apply logo
+  const logoImg = document.getElementById('logoImage');
+  if (settings.logoUrl) {
+    logoImg.src = settings.logoUrl;
+    logoImg.style.display = 'block';
+    logoImg.onerror = () => {
+      logoImg.style.display = 'none';
+    };
+  } else {
+    logoImg.style.display = 'none';
+  }
 
-  visitReasons.forEach(reason => {
-    const option = document.createElement('option');
-    option.value = reason.id;
-    option.textContent = reason.name;
-    select.appendChild(option);
-  });
+  // Apply background image
+  const bgContainer = document.getElementById('backgroundImage');
+  if (settings.backgroundUrl) {
+    bgContainer.style.backgroundImage = `url(${settings.backgroundUrl})`;
+  } else {
+    bgContainer.style.backgroundImage = 'none';
+  }
+
+  // Update settings form fields if on settings screen
+  const logoInput = document.getElementById('logoUrl');
+  const bgInput = document.getElementById('backgroundUrl');
+  if (logoInput) logoInput.value = settings.logoUrl || '';
+  if (bgInput) bgInput.value = settings.backgroundUrl || '';
+}
+
+async function loadHosts() {
+  try {
+    const response = await hostsApi.getAll();
+    hosts = response.hosts || [];
+  } catch (error) {
+    console.error('Failed to load hosts:', error);
+    hosts = [];
+  }
 }
 
 function setupFormHandlers() {
   // Sign in form
   document.getElementById('signInForm').addEventListener('submit', handleSignIn);
 
-  // Admin login form
-  document.getElementById('adminLoginForm').addEventListener('submit', handleAdminLogin);
+  // Settings login form
+  document.getElementById('settingsLoginForm').addEventListener('submit', handleSettingsLogin);
 
   // Change password form
   document.getElementById('changePasswordForm').addEventListener('submit', handleChangePassword);
 }
 
+function setupSettingsTrigger() {
+  const trigger = document.getElementById('settingsTrigger');
+
+  trigger.addEventListener('click', () => {
+    settingsTapCount++;
+
+    if (settingsTapTimer) clearTimeout(settingsTapTimer);
+
+    // Require 5 taps within 2 seconds
+    if (settingsTapCount >= 5) {
+      settingsTapCount = 0;
+      showScreen('settingsLoginScreen');
+    } else {
+      settingsTapTimer = setTimeout(() => {
+        settingsTapCount = 0;
+      }, 2000);
+    }
+  });
+}
+
 // ============================================
-// SIGN IN / SIGN OUT
+// SIGN IN
 // ============================================
 
 async function handleSignIn(e) {
   e.preventDefault();
 
-  const firstName = document.getElementById('firstName').value.trim();
-  const lastName = document.getElementById('lastName').value.trim();
-  const reasonId = document.getElementById('visitReason').value;
+  const visitorName = document.getElementById('visitorName').value.trim();
+  const visitorPhone = document.getElementById('visitorPhone').value.trim();
+  const hostName = document.getElementById('hostName').value.trim();
 
-  if (!firstName || !lastName || !reasonId) {
-    showToast('Please fill in all fields', true);
+  if (!visitorName || !hostName) {
+    showToast('Please fill in required fields', true);
     return;
   }
 
-  const reason = visitReasons.find(r => r.id === reasonId);
-
   try {
     await visitorApi.signIn({
-      firstName,
-      lastName,
-      reasonId,
-      reasonName: reason?.name || 'Unknown'
+      name: visitorName,
+      phone: visitorPhone || null,
+      hostName: hostName
     });
 
     // Show success screen
-    document.getElementById('successMessage').textContent =
-      `Thanks ${firstName}! You're now signed in.`;
+    document.getElementById('successTitle').textContent = 'Signed In!';
+    document.getElementById('successMessage').textContent = `Welcome, ${visitorName}`;
 
     showScreen('successScreen');
 
-    // Start countdown to return to kiosk
-    startCountdown('countdown', 5, () => {
-      showScreen('kioskScreen');
-      document.getElementById('signInForm').reset();
+    // Reset form
+    document.getElementById('signInForm').reset();
+
+    // Start countdown to return to welcome
+    startCountdown(5, () => {
+      showScreen('welcomeScreen');
     });
 
   } catch (error) {
@@ -118,53 +170,99 @@ async function handleSignIn(e) {
   }
 }
 
-function showSignOutModal() {
-  loadSignedInVisitors();
-  document.getElementById('signOutModal').style.display = 'flex';
-}
-
-function closeSignOutModal() {
-  document.getElementById('signOutModal').style.display = 'none';
-}
+// ============================================
+// SIGN OUT
+// ============================================
 
 async function loadSignedInVisitors() {
   const list = document.getElementById('signOutList');
-  list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  if (!list) return;
+
+  list.innerHTML = '<div class="loading-state">Loading...</div>';
 
   try {
     const response = await visitorApi.getSignedIn();
     currentVisitors = response.visitors || [];
 
-    if (currentVisitors.length === 0) {
-      list.innerHTML = '<div class="empty-state">No one is currently signed in</div>';
-      return;
-    }
-
-    list.innerHTML = currentVisitors.map(visitor => `
-      <div class="signout-item" onclick="signOutVisitor('${visitor.id}')">
-        <div class="signout-item-info">
-          <h3>${escapeHtml(visitor.firstName)} ${escapeHtml(visitor.lastName)}</h3>
-          <p>${escapeHtml(visitor.reasonName)} - ${formatTime(visitor.signedInAt)}</p>
-        </div>
-        <span>→</span>
-      </div>
-    `).join('');
-
+    renderSignOutList(currentVisitors);
   } catch (error) {
     list.innerHTML = '<div class="empty-state">Failed to load visitors</div>';
   }
 }
 
-async function signOutVisitor(visitorId) {
+function renderSignOutList(visitors) {
+  const list = document.getElementById('signOutList');
+
+  if (visitors.length === 0) {
+    list.innerHTML = '<div class="empty-state">No one is currently signed in</div>';
+    return;
+  }
+
+  list.innerHTML = visitors.map(visitor => `
+    <div class="visitor-item" onclick="selectVisitorForSignOut('${visitor.id}')">
+      <div class="visitor-item-name">${escapeHtml(visitor.name)}</div>
+      <div class="visitor-item-detail">Signed in at ${formatTime(visitor.signedInAt)}</div>
+    </div>
+  `).join('');
+}
+
+function filterSignOutList() {
+  const searchTerm = document.getElementById('signOutSearch').value.toLowerCase().trim();
+
+  if (!searchTerm) {
+    renderSignOutList(currentVisitors);
+    return;
+  }
+
+  const filtered = currentVisitors.filter(v =>
+    v.name.toLowerCase().includes(searchTerm)
+  );
+
+  renderSignOutList(filtered);
+}
+
+function selectVisitorForSignOut(visitorId) {
+  const visitor = currentVisitors.find(v => v.id === visitorId);
+  if (!visitor) return;
+
+  selectedVisitorForSignOut = visitor;
+
+  // Update confirm modal
+  document.getElementById('confirmVisitorName').textContent =
+    `Sign out ${visitor.name}?`;
+
+  // Show modal
+  document.getElementById('signOutConfirmModal').style.display = 'flex';
+}
+
+function closeSignOutConfirm() {
+  document.getElementById('signOutConfirmModal').style.display = 'none';
+  selectedVisitorForSignOut = null;
+}
+
+async function confirmSignOut() {
+  if (!selectedVisitorForSignOut) return;
+
   try {
-    await visitorApi.signOut(visitorId);
+    await visitorApi.signOut(selectedVisitorForSignOut.id);
 
-    closeSignOutModal();
-    showScreen('signOutSuccessScreen');
+    closeSignOutConfirm();
 
-    // Start countdown to return to kiosk
-    startCountdown('signoutCountdown', 5, () => {
-      showScreen('kioskScreen');
+    // Show success screen
+    document.getElementById('successTitle').textContent = 'Signed Out!';
+    document.getElementById('successMessage').textContent = `Goodbye, ${selectedVisitorForSignOut.name}`;
+
+    showScreen('successScreen');
+
+    // Clear search
+    document.getElementById('signOutSearch').value = '';
+
+    // Reload visitors list
+    await loadSignedInVisitors();
+
+    // Start countdown to return to welcome
+    startCountdown(5, () => {
+      showScreen('welcomeScreen');
     });
 
   } catch (error) {
@@ -173,307 +271,178 @@ async function signOutVisitor(visitorId) {
 }
 
 // ============================================
-// ADMIN
+// SETTINGS - LOGIN
 // ============================================
 
-function handleAdminTrigger() {
-  adminTapCount++;
-
-  if (adminTapTimer) clearTimeout(adminTapTimer);
-
-  // Require 5 taps within 2 seconds
-  if (adminTapCount >= 5) {
-    adminTapCount = 0;
-    showScreen('adminLoginScreen');
-  } else {
-    adminTapTimer = setTimeout(() => {
-      adminTapCount = 0;
-    }, 2000);
-  }
-}
-
-async function handleAdminLogin(e) {
+async function handleSettingsLogin(e) {
   e.preventDefault();
 
-  const password = document.getElementById('adminPassword').value;
+  const password = document.getElementById('settingsPassword').value;
 
   try {
     const response = await authApi.login(password);
     localStorage.setItem('adminToken', response.token);
 
-    document.getElementById('adminPassword').value = '';
-    showAdminDashboard();
+    document.getElementById('settingsPassword').value = '';
+    showSettingsScreen();
 
   } catch (error) {
     showToast('Invalid password', true);
   }
 }
 
-function checkAdminSession() {
-  const token = localStorage.getItem('adminToken');
-  if (token) {
-    // Verify token is still valid
-    authApi.verify().catch(() => {
-      localStorage.removeItem('adminToken');
-    });
-  }
+function showSettingsScreen() {
+  showScreen('settingsScreen');
+  loadEvacuationList();
+  loadHostsSettings();
+  applyBranding(); // Refresh branding inputs
 }
 
-async function showAdminDashboard() {
-  showScreen('adminScreen');
-  await loadTodayVisitors();
-  loadReasonsSettings();
-}
-
-function logout() {
-  localStorage.removeItem('adminToken');
-  showScreen('kioskScreen');
-}
-
-function showKiosk() {
-  showScreen('kioskScreen');
+function logoutSettings() {
+  showScreen('welcomeScreen');
 }
 
 // ============================================
-// ADMIN TABS
+// SETTINGS - TABS
 // ============================================
 
-function switchAdminTab(tabName) {
+function switchSettingsTab(tabName) {
   // Update tab buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  document.querySelectorAll('.settings-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
 
   // Update tab content
-  document.querySelectorAll('.tab-content').forEach(content => {
+  document.querySelectorAll('.settings-content').forEach(content => {
     content.classList.toggle('active', content.id === `${tabName}Tab`);
   });
 
-  // Load data for the tab
-  if (tabName === 'today') {
-    loadTodayVisitors();
-  } else if (tabName === 'settings') {
-    loadReasonsSettings();
+  // Load data for specific tabs
+  if (tabName === 'evacuation') {
+    loadEvacuationList();
+  } else if (tabName === 'hosts') {
+    loadHostsSettings();
   }
 }
 
 // ============================================
-// TODAY'S VISITORS
+// SETTINGS - EVACUATION LIST
 // ============================================
 
-async function loadTodayVisitors() {
-  const list = document.getElementById('visitorList');
-  list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+async function loadEvacuationList() {
+  const list = document.getElementById('evacuationList');
+  const countEl = document.getElementById('evacuationCount');
+
+  list.innerHTML = '<div class="loading-state">Loading...</div>';
 
   try {
-    const [visitorsResponse, statsResponse] = await Promise.all([
-      visitorApi.getSignedIn(),
-      visitorApi.getTodayStats()
-    ]);
-
-    currentVisitors = visitorsResponse.visitors || [];
-    const stats = statsResponse;
-
-    // Update stats
-    document.getElementById('statSignedIn').textContent = stats.signedIn || 0;
-    document.getElementById('statTotal').textContent = stats.total || 0;
-
-    // Render visitor list
-    if (currentVisitors.length === 0) {
-      list.innerHTML = '<div class="empty-state">No one is currently signed in</div>';
-      return;
-    }
-
-    list.innerHTML = currentVisitors.map(visitor => `
-      <div class="visitor-card">
-        <div class="visitor-info">
-          <h3>${escapeHtml(visitor.firstName)} ${escapeHtml(visitor.lastName)}</h3>
-          <p>${escapeHtml(visitor.reasonName)}</p>
-        </div>
-        <div class="visitor-actions">
-          <span class="visitor-time">${formatTime(visitor.signedInAt)}</span>
-          <button class="btn btn-small btn-secondary" onclick="adminSignOut('${visitor.id}')">
-            Sign Out
-          </button>
-        </div>
-      </div>
-    `).join('');
-
-  } catch (error) {
-    list.innerHTML = '<div class="empty-state">Failed to load visitors</div>';
-  }
-}
-
-function refreshVisitors() {
-  loadTodayVisitors();
-}
-
-async function adminSignOut(visitorId) {
-  try {
-    await visitorApi.signOut(visitorId);
-    showToast('Visitor signed out');
-    loadTodayVisitors();
-  } catch (error) {
-    showToast('Failed to sign out visitor', true);
-  }
-}
-
-// ============================================
-// REPORTS
-// ============================================
-
-async function generateReport() {
-  const fromDate = document.getElementById('reportDateFrom').value;
-  const toDate = document.getElementById('reportDateTo').value;
-
-  if (!fromDate || !toDate) {
-    showToast('Please select date range', true);
-    return;
-  }
-
-  const results = document.getElementById('reportResults');
-  results.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-
-  try {
-    const response = await visitorApi.getByDateRange(fromDate, toDate);
+    const response = await visitorApi.getSignedIn();
     const visitors = response.visitors || [];
 
+    countEl.textContent = `${visitors.length} visitor${visitors.length !== 1 ? 's' : ''}`;
+
     if (visitors.length === 0) {
-      results.innerHTML = '<div class="empty-state">No visitors found for this date range</div>';
+      list.innerHTML = '<div class="empty-state">No visitors currently signed in</div>';
       return;
     }
 
-    results.innerHTML = `
-      <p>${visitors.length} visitors found</p>
-      <table class="report-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Name</th>
-            <th>Reason</th>
-            <th>Signed In</th>
-            <th>Signed Out</th>
-            <th>Duration</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${visitors.map(v => `
-            <tr>
-              <td>${formatDate(v.signedInAt)}</td>
-              <td>${escapeHtml(v.firstName)} ${escapeHtml(v.lastName)}</td>
-              <td>${escapeHtml(v.reasonName)}</td>
-              <td>${formatTime(v.signedInAt)}</td>
-              <td>${v.signedOutAt ? formatTime(v.signedOutAt) : '-'}</td>
-              <td>${v.signedOutAt ? calculateDuration(v.signedInAt, v.signedOutAt) : '-'}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
-
-    // Store for export
-    window.lastReportData = visitors;
-
-  } catch (error) {
-    results.innerHTML = '<div class="empty-state">Failed to generate report</div>';
-  }
-}
-
-function exportReport() {
-  const visitors = window.lastReportData;
-
-  if (!visitors || visitors.length === 0) {
-    showToast('Generate a report first', true);
-    return;
-  }
-
-  // Build CSV
-  const headers = ['Date', 'First Name', 'Last Name', 'Reason', 'Signed In', 'Signed Out', 'Duration'];
-  const rows = visitors.map(v => [
-    formatDate(v.signedInAt),
-    v.firstName,
-    v.lastName,
-    v.reasonName,
-    formatTime(v.signedInAt),
-    v.signedOutAt ? formatTime(v.signedOutAt) : '',
-    v.signedOutAt ? calculateDuration(v.signedInAt, v.signedOutAt) : ''
-  ]);
-
-  const csv = [
-    headers.join(','),
-    ...rows.map(r => r.map(cell => `"${cell}"`).join(','))
-  ].join('\n');
-
-  // Download
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `visitor-report-${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-
-  showToast('Report exported');
-}
-
-// ============================================
-// SETTINGS - REASONS
-// ============================================
-
-async function loadReasonsSettings() {
-  const list = document.getElementById('reasonsList');
-
-  try {
-    const response = await reasonsApi.getAll();
-    visitReasons = response.reasons || [];
-
-    if (visitReasons.length === 0) {
-      list.innerHTML = '<div class="empty-state">No reasons configured</div>';
-      return;
-    }
-
-    list.innerHTML = visitReasons.map(reason => `
-      <div class="reason-item">
-        <span>${escapeHtml(reason.name)}</span>
-        <button onclick="deleteReason('${reason.id}')" title="Delete">×</button>
+    list.innerHTML = visitors.map(visitor => `
+      <div class="evacuation-item">
+        <div class="evacuation-name">${escapeHtml(visitor.name)}</div>
+        <div class="evacuation-detail">
+          ${visitor.hostName ? `Visiting: ${escapeHtml(visitor.hostName)}` : ''}
+          ${visitor.phone ? ` | ${escapeHtml(visitor.phone)}` : ''}
+        </div>
       </div>
     `).join('');
 
   } catch (error) {
-    list.innerHTML = '<div class="empty-state">Failed to load reasons</div>';
+    list.innerHTML = '<div class="empty-state">Failed to load evacuation list</div>';
+    countEl.textContent = 'Error';
   }
 }
 
-async function addReason() {
-  const input = document.getElementById('newReasonInput');
+// ============================================
+// SETTINGS - BRANDING
+// ============================================
+
+async function saveBranding() {
+  const logoUrl = document.getElementById('logoUrl').value.trim();
+  const backgroundUrl = document.getElementById('backgroundUrl').value.trim();
+
+  try {
+    await settingsApi.save({
+      logoUrl,
+      backgroundUrl
+    });
+
+    settings.logoUrl = logoUrl;
+    settings.backgroundUrl = backgroundUrl;
+
+    applyBranding();
+    showToast('Branding saved');
+
+  } catch (error) {
+    showToast('Failed to save branding', true);
+  }
+}
+
+// ============================================
+// SETTINGS - HOSTS
+// ============================================
+
+async function loadHostsSettings() {
+  const list = document.getElementById('hostsList');
+
+  try {
+    const response = await hostsApi.getAll();
+    hosts = response.hosts || [];
+
+    if (hosts.length === 0) {
+      list.innerHTML = '<div class="empty-state">No hosts configured</div>';
+      return;
+    }
+
+    list.innerHTML = hosts.map(host => `
+      <div class="host-item">
+        <span>${escapeHtml(host.name)}</span>
+        <button type="button" class="btn-delete" onclick="deleteHost('${host.id}')" title="Delete">X</button>
+      </div>
+    `).join('');
+
+  } catch (error) {
+    list.innerHTML = '<div class="empty-state">Failed to load hosts</div>';
+  }
+}
+
+async function addHost() {
+  const input = document.getElementById('newHostInput');
   const name = input.value.trim();
 
   if (!name) {
-    showToast('Enter a reason name', true);
+    showToast('Enter a host name', true);
     return;
   }
 
   try {
-    await reasonsApi.create(name);
+    await hostsApi.create(name);
     input.value = '';
-    await loadReasonsSettings();
-    await loadVisitReasons(); // Refresh kiosk dropdown
-    showToast('Reason added');
+    await loadHostsSettings();
+    await loadHosts(); // Refresh main hosts list
+    showToast('Host added');
   } catch (error) {
-    showToast('Failed to add reason', true);
+    showToast('Failed to add host', true);
   }
 }
 
-async function deleteReason(id) {
-  if (!confirm('Delete this reason?')) return;
-
+async function deleteHost(id) {
   try {
-    await reasonsApi.delete(id);
-    await loadReasonsSettings();
-    await loadVisitReasons(); // Refresh kiosk dropdown
-    showToast('Reason deleted');
+    await hostsApi.delete(id);
+    await loadHostsSettings();
+    await loadHosts(); // Refresh main hosts list
+    showToast('Host deleted');
   } catch (error) {
-    showToast('Failed to delete reason', true);
+    showToast('Failed to delete host', true);
   }
 }
 
@@ -502,6 +471,101 @@ async function handleChangePassword(e) {
 }
 
 // ============================================
+// ADMIN DASHBOARD
+// ============================================
+
+function showAdminDashboard() {
+  showScreen('adminScreen');
+
+  // Set default date range to today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('adminDateFrom').value = today;
+  document.getElementById('adminDateTo').value = today;
+
+  loadAdminData();
+}
+
+function logoutAdmin() {
+  localStorage.removeItem('adminToken');
+  showScreen('welcomeScreen');
+}
+
+async function loadAdminData() {
+  const tbody = document.getElementById('adminTableBody');
+  const fromDate = document.getElementById('adminDateFrom').value;
+  const toDate = document.getElementById('adminDateTo').value;
+
+  if (!fromDate || !toDate) {
+    showToast('Please select date range', true);
+    return;
+  }
+
+  tbody.innerHTML = '<tr><td colspan="6" class="loading-state">Loading...</td></tr>';
+
+  try {
+    const response = await visitorApi.getByDateRange(fromDate, toDate);
+    allVisitors = response.visitors || [];
+
+    if (allVisitors.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No visitors found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = allVisitors.map(visitor => `
+      <tr>
+        <td>${formatDateTime(visitor.signedInAt)}</td>
+        <td>${escapeHtml(visitor.name)}</td>
+        <td>${visitor.phone ? escapeHtml(visitor.phone) : '-'}</td>
+        <td>${visitor.hostName ? escapeHtml(visitor.hostName) : '-'}</td>
+        <td>
+          <span class="status-badge ${visitor.signedOutAt ? 'status-out' : 'status-in'}">
+            ${visitor.signedOutAt ? 'Signed Out' : 'Signed In'}
+          </span>
+        </td>
+        <td>${visitor.signedOutAt ? formatDateTime(visitor.signedOutAt) : '-'}</td>
+      </tr>
+    `).join('');
+
+  } catch (error) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Failed to load data</td></tr>';
+  }
+}
+
+function exportToCSV() {
+  if (!allVisitors || allVisitors.length === 0) {
+    showToast('No data to export', true);
+    return;
+  }
+
+  // Build CSV
+  const headers = ['Date/Time In', 'Visitor Name', 'Phone', 'Host', 'Status', 'Date/Time Out'];
+  const rows = allVisitors.map(v => [
+    formatDateTime(v.signedInAt),
+    v.name,
+    v.phone || '',
+    v.hostName || '',
+    v.signedOutAt ? 'Signed Out' : 'Signed In',
+    v.signedOutAt ? formatDateTime(v.signedOutAt) : ''
+  ]);
+
+  const csv = [
+    headers.join(','),
+    ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+  ].join('\n');
+
+  // Download
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `visitor-log-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  showToast('Report exported');
+}
+
+// ============================================
 // UTILITIES
 // ============================================
 
@@ -512,20 +576,26 @@ function showScreen(screenId) {
     countdownTimer = null;
   }
 
+  // Hide all screens
   document.querySelectorAll('.screen').forEach(screen => {
     screen.classList.remove('active');
   });
+
+  // Show target screen
   document.getElementById(screenId).classList.add('active');
+
+  // Refresh data when showing certain screens
+  if (screenId === 'signOutScreen') {
+    loadSignedInVisitors();
+    document.getElementById('signOutSearch').value = '';
+  }
 }
 
-function startCountdown(elementId, seconds, callback) {
-  const el = document.getElementById(elementId);
+function startCountdown(seconds, callback) {
   let remaining = seconds;
-  el.textContent = remaining;
 
   countdownTimer = setInterval(() => {
     remaining--;
-    el.textContent = remaining;
 
     if (remaining <= 0) {
       clearInterval(countdownTimer);
@@ -564,29 +634,17 @@ function formatTime(isoString) {
   });
 }
 
-function formatDate(isoString) {
+function formatDateTime(isoString) {
   if (!isoString) return '';
   const date = new Date(isoString);
-  return date.toLocaleDateString('en-AU', {
+  return date.toLocaleString('en-AU', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric'
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
   });
-}
-
-function calculateDuration(start, end) {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const diffMs = endDate - startDate;
-  const diffMins = Math.round(diffMs / 60000);
-
-  if (diffMins < 60) {
-    return `${diffMins}m`;
-  }
-
-  const hours = Math.floor(diffMins / 60);
-  const mins = diffMins % 60;
-  return `${hours}h ${mins}m`;
 }
 
 // ============================================
