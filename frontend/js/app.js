@@ -11,7 +11,9 @@ let currentVisitors = [];
 let hosts = [];
 let settings = {
   logoUrl: '',
-  backgroundUrl: ''
+  backgroundUrl: '',
+  privacyPolicyEnabled: '',
+  privacyPolicyText: ''
 };
 let countdownTimer = null;
 let selectedVisitorForSignOut = null;
@@ -77,6 +79,39 @@ function applyBranding() {
     bgContainer.style.backgroundImage = `url(${bgUrl})`;
   } else {
     bgContainer.style.backgroundImage = 'none';
+  }
+
+  // Apply privacy policy visibility
+  applyPrivacyPolicy();
+}
+
+function applyPrivacyPolicy() {
+  const privacyLink = document.getElementById('privacyPolicyLink');
+  if (privacyLink) {
+    const isEnabled = settings.privacyPolicyEnabled === 'true';
+    privacyLink.style.display = isEnabled ? 'block' : 'none';
+  }
+}
+
+function showPrivacyPolicy() {
+  const modal = document.getElementById('privacyPolicyModal');
+  const content = document.getElementById('privacyPolicyContent');
+
+  if (content) {
+    // Convert plain text to HTML paragraphs for better readability
+    const text = settings.privacyPolicyText || 'No privacy policy has been set.';
+    content.innerHTML = text.split('\n').map(p => p.trim() ? `<p>${escapeHtml(p)}</p>` : '').join('');
+  }
+
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function closePrivacyPolicy() {
+  const modal = document.getElementById('privacyPolicyModal');
+  if (modal) {
+    modal.style.display = 'none';
   }
 }
 

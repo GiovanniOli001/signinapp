@@ -185,6 +185,26 @@
               </div>
             </section>
 
+            <!-- Privacy Policy Section -->
+            <section class="settings-section">
+              <h2>Privacy Policy</h2>
+              <p class="section-description">Optionally display a privacy policy link on the sign-in screen.</p>
+              <div class="setting-card">
+                <div class="toggle-row">
+                  <label class="toggle-label">
+                    <input type="checkbox" id="privacyPolicyEnabled" onchange="savePrivacySettings()">
+                    <span class="toggle-text">Show privacy policy on sign-in screen</span>
+                  </label>
+                </div>
+                <div class="form-group" style="margin-top: 16px;">
+                  <label for="privacyPolicyText">Privacy Policy Text</label>
+                  <textarea id="privacyPolicyText" rows="8" placeholder="Enter your privacy policy text here..."></textarea>
+                  <p class="field-hint">This text will be displayed when visitors click the privacy policy link.</p>
+                </div>
+                <button type="button" class="btn-primary btn-small" onclick="savePrivacySettings()">Save Privacy Policy</button>
+              </div>
+            </section>
+
             <!-- Hosts Section -->
             <section class="settings-section">
               <h2>Hosts</h2>

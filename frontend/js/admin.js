@@ -7,7 +7,9 @@ let allVisitors = [];
 let hosts = [];
 let settings = {
   logoUrl: '',
-  backgroundUrl: ''
+  backgroundUrl: '',
+  privacyPolicyEnabled: '',
+  privacyPolicyText: ''
 };
 let visitorChart = null;
 let chartRange = 7;
@@ -432,6 +434,7 @@ function switchAdminTab(tabName) {
 
 async function loadSettingsData() {
   await loadBrandingSettings();
+  await loadPrivacySettings();
   await loadHostsSettings();
 }
 
@@ -607,6 +610,42 @@ function fileToBase64(file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+// ============================================
+// SETTINGS - PRIVACY POLICY
+// ============================================
+
+async function loadPrivacySettings() {
+  const enabledCheckbox = document.getElementById('privacyPolicyEnabled');
+  const textArea = document.getElementById('privacyPolicyText');
+
+  if (enabledCheckbox) {
+    enabledCheckbox.checked = settings.privacyPolicyEnabled === 'true';
+  }
+
+  if (textArea) {
+    textArea.value = settings.privacyPolicyText || '';
+  }
+}
+
+async function savePrivacySettings() {
+  const enabled = document.getElementById('privacyPolicyEnabled').checked;
+  const text = document.getElementById('privacyPolicyText').value;
+
+  try {
+    await settingsApi.save({
+      privacyPolicyEnabled: enabled,
+      privacyPolicyText: text
+    });
+
+    settings.privacyPolicyEnabled = enabled ? 'true' : 'false';
+    settings.privacyPolicyText = text;
+
+    showToast('Privacy policy settings saved');
+  } catch (error) {
+    showToast('Failed to save privacy settings', true);
+  }
 }
 
 // ============================================

@@ -7,6 +7,8 @@ import { Env, json, error, uuid, parseBody } from '../index';
 interface SaveSettingsBody {
   logoUrl?: string;
   backgroundUrl?: string;
+  privacyPolicyEnabled?: boolean;
+  privacyPolicyText?: string;
 }
 
 export async function handleSettings(
@@ -51,6 +53,23 @@ export async function handleSettings(
         VALUES (?, 'backgroundUrl', ?, ?)
         ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?
       `).bind(uuid(), body.backgroundUrl, now, body.backgroundUrl, now).run();
+    }
+
+    if (body.privacyPolicyEnabled !== undefined) {
+      const enabledValue = body.privacyPolicyEnabled ? 'true' : 'false';
+      await env.DB.prepare(`
+        INSERT INTO settings (id, key, value, updated_at)
+        VALUES (?, 'privacyPolicyEnabled', ?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?
+      `).bind(uuid(), enabledValue, now, enabledValue, now).run();
+    }
+
+    if (body.privacyPolicyText !== undefined) {
+      await env.DB.prepare(`
+        INSERT INTO settings (id, key, value, updated_at)
+        VALUES (?, 'privacyPolicyText', ?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?
+      `).bind(uuid(), body.privacyPolicyText, now, body.privacyPolicyText, now).run();
     }
 
     return json({ message: 'Settings saved' });

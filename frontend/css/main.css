@@ -1278,3 +1278,59 @@ input, select, textarea {
     margin-top: 8px;
   }
 }
+
+/* ============================================
+   PRIVACY POLICY
+   ============================================ */
+
+.privacy-link {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.privacy-link a {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.privacy-link a:hover {
+  color: var(--navy);
+  text-decoration: underline;
+}
+
+.privacy-modal {
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.privacy-modal h2 {
+  flex-shrink: 0;
+}
+
+.privacy-content {
+  flex: 1;
+  overflow-y: auto;
+  text-align: left;
+  padding: 16px 0;
+  max-height: 400px;
+}
+
+.privacy-content p {
+  margin-bottom: 16px;
+  color: var(--gray-700);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.privacy-content p:last-child {
+  margin-bottom: 0;
+}
+
+.privacy-modal .modal-actions {
+  flex-shrink: 0;
+  justify-content: center;
+}
