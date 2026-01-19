@@ -234,6 +234,9 @@ function closeSignOutConfirm() {
 async function confirmSignOut() {
   if (!selectedVisitorForSignOut) return;
 
+  // Save visitor name before closeSignOutConfirm() clears selectedVisitorForSignOut
+  const visitorName = selectedVisitorForSignOut.name;
+
   try {
     await visitorApi.signOut(selectedVisitorForSignOut.id);
 
@@ -241,7 +244,7 @@ async function confirmSignOut() {
 
     // Show success screen
     document.getElementById('successTitle').textContent = 'Signed Out!';
-    document.getElementById('successMessage').textContent = `Goodbye, ${selectedVisitorForSignOut.name}`;
+    document.getElementById('successMessage').textContent = `Goodbye, ${visitorName}`;
 
     showScreen('successScreen');
 
