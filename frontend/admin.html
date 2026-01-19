@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Visitor Log - Admin</title>
   <link rel="stylesheet" href="css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="admin-app">
@@ -27,62 +28,196 @@
     <div id="dashboardScreen" class="screen">
       <header class="admin-header">
         <h1>Visitor Log</h1>
+        <nav class="admin-nav">
+          <button type="button" class="nav-tab active" data-tab="visitors" onclick="switchAdminTab('visitors')">Visitors</button>
+          <button type="button" class="nav-tab" data-tab="settings" onclick="switchAdminTab('settings')">Settings</button>
+        </nav>
         <button type="button" class="btn-logout" onclick="logout()">Logout</button>
       </header>
 
       <main class="admin-main">
-        <!-- Stats Cards -->
-        <div class="stats-row">
-          <div class="stat-card">
-            <div class="stat-value" id="statSignedIn">0</div>
-            <div class="stat-label">Currently Signed In</div>
+        <!-- Visitors Tab -->
+        <div id="visitorsTab" class="admin-tab-content active">
+          <!-- Stats Cards -->
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-value" id="statSignedIn">0</div>
+              <div class="stat-label">Currently Signed In</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statToday">0</div>
+              <div class="stat-label">Today's Visitors</div>
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-value" id="statToday">0</div>
-            <div class="stat-label">Today's Visitors</div>
+
+          <!-- Analytics Section -->
+          <div class="analytics-grid">
+            <!-- Line Chart -->
+            <div class="analytics-card">
+              <div class="analytics-card-header">
+                <h3>Visitor Trends</h3>
+                <div class="chart-controls">
+                  <button type="button" class="chart-range-btn active" data-range="7" onclick="updateChartRange(7)">7 Days</button>
+                  <button type="button" class="chart-range-btn" data-range="14" onclick="updateChartRange(14)">14 Days</button>
+                  <button type="button" class="chart-range-btn" data-range="30" onclick="updateChartRange(30)">30 Days</button>
+                </div>
+              </div>
+              <div class="analytics-card-body">
+                <div class="chart-container">
+                  <canvas id="visitorChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trend Cards -->
+            <div class="trends-stack">
+              <div class="trend-card">
+                <div class="trend-icon time">&#128337;</div>
+                <h4>Peak Sign-In Time</h4>
+                <div class="trend-value" id="peakTime">-</div>
+                <div class="trend-label" id="peakTimeLabel">Most common hour</div>
+              </div>
+
+              <div class="trend-card">
+                <div class="trend-icon host">&#128100;</div>
+                <h4>Top Host</h4>
+                <div class="trend-value" id="topHost">-</div>
+                <div class="trend-label" id="topHostLabel">Most visited</div>
+              </div>
+
+              <div class="trend-card">
+                <div class="trend-icon avg">&#128200;</div>
+                <h4>Daily Average</h4>
+                <div class="trend-value" id="dailyAvg">-</div>
+                <div class="trend-label" id="dailyAvgLabel">visitors per day</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="filters-row">
+            <div class="filter-group">
+              <label for="dateFrom">From</label>
+              <input type="date" id="dateFrom">
+            </div>
+            <div class="filter-group">
+              <label for="dateTo">To</label>
+              <input type="date" id="dateTo">
+            </div>
+            <div class="filter-group">
+              <label for="statusFilter">Status</label>
+              <select id="statusFilter">
+                <option value="all">All</option>
+                <option value="signed-in">Signed In</option>
+                <option value="signed-out">Signed Out</option>
+              </select>
+            </div>
+            <button type="button" class="btn-primary" onclick="loadVisitors()">Apply</button>
+            <button type="button" class="btn-secondary" onclick="exportToCSV()">Export CSV</button>
+          </div>
+
+          <!-- Visitors Table -->
+          <div class="table-container">
+            <table id="visitorsTable">
+              <thead>
+                <tr>
+                  <th>Date/Time In</th>
+                  <th>Visitor Name</th>
+                  <th>Phone</th>
+                  <th>Host</th>
+                  <th>Status</th>
+                  <th>Date/Time Out</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="visitorsTableBody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <!-- Filters -->
-        <div class="filters-row">
-          <div class="filter-group">
-            <label for="dateFrom">From</label>
-            <input type="date" id="dateFrom">
-          </div>
-          <div class="filter-group">
-            <label for="dateTo">To</label>
-            <input type="date" id="dateTo">
-          </div>
-          <div class="filter-group">
-            <label for="statusFilter">Status</label>
-            <select id="statusFilter">
-              <option value="all">All</option>
-              <option value="signed-in">Signed In</option>
-              <option value="signed-out">Signed Out</option>
-            </select>
-          </div>
-          <button type="button" class="btn-primary" onclick="loadVisitors()">Apply</button>
-          <button type="button" class="btn-secondary" onclick="exportToCSV()">Export CSV</button>
-        </div>
+        <!-- Settings Tab -->
+        <div id="settingsTab" class="admin-tab-content">
+          <div class="settings-sections">
+            <!-- Branding Section -->
+            <section class="settings-section">
+              <h2>Branding</h2>
 
-        <!-- Visitors Table -->
-        <div class="table-container">
-          <table id="visitorsTable">
-            <thead>
-              <tr>
-                <th>Date/Time In</th>
-                <th>Visitor Name</th>
-                <th>Phone</th>
-                <th>Host</th>
-                <th>Status</th>
-                <th>Date/Time Out</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="visitorsTableBody">
-              <!-- Populated by JS -->
-            </tbody>
-          </table>
+              <!-- Logo -->
+              <div class="setting-card">
+                <h3>Logo</h3>
+                <div class="branding-preview">
+                  <img id="logoPreview" src="" alt="Logo preview" style="display: none;">
+                  <div id="logoPlaceholder" class="preview-placeholder">No logo set</div>
+                </div>
+                <div class="branding-controls">
+                  <div class="upload-row">
+                    <label for="logoFile" class="btn-secondary btn-small">Upload Image</label>
+                    <input type="file" id="logoFile" accept="image/*" onchange="handleLogoUpload(event)" style="display: none;">
+                  </div>
+                  <div class="url-row">
+                    <input type="url" id="logoUrl" placeholder="Or paste image URL...">
+                    <button type="button" class="btn-primary btn-small" onclick="saveLogoUrl()">Use URL</button>
+                  </div>
+                  <button type="button" class="btn-danger btn-small" onclick="clearLogo()">Clear Logo</button>
+                </div>
+              </div>
+
+              <!-- Background -->
+              <div class="setting-card" style="margin-top: 16px;">
+                <h3>Background Image</h3>
+                <div class="branding-preview background-preview">
+                  <div id="backgroundPreview" style="display: none;"></div>
+                  <div id="backgroundPlaceholder" class="preview-placeholder">No background set</div>
+                </div>
+                <div class="branding-controls">
+                  <div class="upload-row">
+                    <label for="backgroundFile" class="btn-secondary btn-small">Upload Image</label>
+                    <input type="file" id="backgroundFile" accept="image/*" onchange="handleBackgroundUpload(event)" style="display: none;">
+                  </div>
+                  <div class="url-row">
+                    <input type="url" id="backgroundUrl" placeholder="Or paste image URL...">
+                    <button type="button" class="btn-primary btn-small" onclick="saveBackgroundUrl()">Use URL</button>
+                  </div>
+                  <button type="button" class="btn-danger btn-small" onclick="clearBackground()">Clear Background</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Hosts Section -->
+            <section class="settings-section">
+              <h2>Hosts</h2>
+              <p class="section-description">Manage the list of hosts that visitors can select when signing in.</p>
+              <div class="setting-card">
+                <div id="hostsList" class="hosts-list">
+                  <!-- Populated by JS -->
+                </div>
+                <div class="add-host-row">
+                  <input type="text" id="newHostInput" placeholder="Add new host name...">
+                  <button type="button" class="btn-primary btn-small" onclick="addHost()">Add</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Password Section -->
+            <section class="settings-section">
+              <h2>Change Password</h2>
+              <div class="setting-card">
+                <form id="changePasswordForm">
+                  <div class="form-group">
+                    <label for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" required>
+                  </div>
+                  <button type="submit" class="btn-primary">Change Password</button>
+                </form>
+              </div>
+            </section>
+          </div>
         </div>
       </main>
     </div>
