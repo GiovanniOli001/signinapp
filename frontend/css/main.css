@@ -1355,7 +1355,7 @@ input, select, textarea {
 
 .survey-modal {
   max-width: 520px;
-  text-align: left;
+  text-align: center;
 }
 
 .survey-intro {
@@ -1387,41 +1387,38 @@ input, select, textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   padding: 16px 24px;
-  background: var(--gray-50);
-  border: 3px solid var(--gray-200);
+  background: transparent;
+  border: none;
   border-radius: var(--radius);
   cursor: pointer;
   transition: var(--transition);
   min-width: 100px;
+  min-height: 110px;
 }
 
 .smiley-btn:hover {
   background: var(--gray-100);
-  border-color: var(--gray-300);
 }
 
 .smiley-btn.selected {
-  border-color: var(--navy);
   background: rgba(30, 58, 95, 0.08);
 }
 
 .smiley-btn[data-value="good"].selected,
 .smiley-btn[data-value="comfortable"].selected {
-  border-color: var(--success);
   background: rgba(34, 197, 94, 0.1);
 }
 
 .smiley-btn[data-value="average"].selected,
 .smiley-btn[data-value="okay"].selected {
-  border-color: #f59e0b;
   background: rgba(245, 158, 11, 0.1);
 }
 
 .smiley-btn[data-value="poor"].selected,
 .smiley-btn[data-value="uncomfortable"].selected {
-  border-color: var(--danger);
   background: rgba(239, 68, 68, 0.1);
 }
 
