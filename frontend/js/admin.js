@@ -4,12 +4,14 @@
 // ============================================
 
 let allVisitors = [];
+let allSurveys = [];
 let hosts = [];
 let settings = {
   logoUrl: '',
   backgroundUrl: '',
   privacyPolicyEnabled: '',
-  privacyPolicyText: ''
+  privacyPolicyText: '',
+  notificationEmail: ''
 };
 let visitorChart = null;
 let chartRange = 7;
@@ -106,7 +108,7 @@ async function loadVisitors() {
     return;
   }
 
-  tbody.innerHTML = '<tr><td colspan="7" class="loading">Loading...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" class="loading">Loading...</td></tr>';
 
   try {
     const response = await visitorApi.getByDateRange(fromDate, toDate);
@@ -121,27 +123,38 @@ async function loadVisitors() {
     }
 
     if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty">No visitors found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">No visitors found</td></tr>';
       return;
     }
 
-    tbody.innerHTML = filtered.map(visitor => `
-      <tr>
-        <td>${formatDateTime(visitor.signedInAt)}</td>
-        <td>${escapeHtml(visitor.name)}</td>
-        <td>${visitor.phone ? escapeHtml(visitor.phone) : '-'}</td>
-        <td>${visitor.hostName ? escapeHtml(visitor.hostName) : '-'}</td>
-        <td>
-          <span class="status-badge ${visitor.signedOutAt ? 'status-out' : 'status-in'}">
-            ${visitor.signedOutAt ? 'Signed Out' : 'Signed In'}
-          </span>
-        </td>
-        <td>${visitor.signedOutAt ? formatDateTime(visitor.signedOutAt) : '-'}</td>
-        <td>
-          ${!visitor.signedOutAt ? `<button class="btn-action" onclick="signOutVisitor('${visitor.id}')">Sign Out</button>` : ''}
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = filtered.map(visitor => {
+      // Support both old (name) and new (firstName/lastName) format
+      const firstName = visitor.firstName || visitor.name?.split(' ')[0] || '';
+      const lastName = visitor.lastName || visitor.name?.split(' ').slice(1).join(' ') || '';
+      const purpose = visitor.purpose || visitor.hostName || '-';
+      const purposeLabel = purpose === 'participant' ? 'Participant' :
+                           purpose === 'visitor' ? 'Visitor' :
+                           purpose === 'staff' ? 'Staff' : purpose;
+
+      return `
+        <tr>
+          <td>${formatDateTime(visitor.signedInAt)}</td>
+          <td>${escapeHtml(firstName)}</td>
+          <td>${escapeHtml(lastName)}</td>
+          <td>${visitor.phone ? escapeHtml(visitor.phone) : '-'}</td>
+          <td>${escapeHtml(purposeLabel)}</td>
+          <td>
+            <span class="status-badge ${visitor.signedOutAt ? 'status-out' : 'status-in'}">
+              ${visitor.signedOutAt ? 'Signed Out' : 'Signed In'}
+            </span>
+          </td>
+          <td>${visitor.signedOutAt ? formatDateTime(visitor.signedOutAt) : '-'}</td>
+          <td>
+            ${!visitor.signedOutAt ? `<button class="btn-action" onclick="signOutVisitor('${visitor.id}')">Sign Out</button>` : ''}
+          </td>
+        </tr>
+      `;
+    }).join('');
 
   } catch (error) {
     tbody.innerHTML = '<tr><td colspan="7" class="error">Failed to load visitors</td></tr>';
@@ -175,16 +188,30 @@ function exportToCSV() {
     return;
   }
 
-  // Build CSV
-  const headers = ['Date/Time In', 'Visitor Name', 'Phone', 'Host', 'Status', 'Date/Time Out'];
-  const rows = filtered.map(v => [
-    formatDateTime(v.signedInAt),
-    v.name,
-    v.phone || '',
-    v.hostName || '',
-    v.signedOutAt ? 'Signed Out' : 'Signed In',
-    v.signedOutAt ? formatDateTime(v.signedOutAt) : ''
-  ]);
+  // Build CSV with new fields
+  const headers = ['Date/Time In', 'First Name', 'Last Name', 'Phone', 'Purpose', 'Status', 'Date/Time Out', 'Session Rating', 'Comfort Rating', 'Feedback'];
+  const rows = filtered.map(v => {
+    // Support both old (name) and new (firstName/lastName) format
+    const firstName = v.firstName || v.name?.split(' ')[0] || '';
+    const lastName = v.lastName || v.name?.split(' ').slice(1).join(' ') || '';
+    const purpose = v.purpose || v.hostName || '';
+    const purposeLabel = purpose === 'participant' ? 'Participant' :
+                         purpose === 'visitor' ? 'Visitor' :
+                         purpose === 'staff' ? 'Staff' : purpose;
+
+    return [
+      formatDateTime(v.signedInAt),
+      firstName,
+      lastName,
+      v.phone || '',
+      purposeLabel,
+      v.signedOutAt ? 'Signed Out' : 'Signed In',
+      v.signedOutAt ? formatDateTime(v.signedOutAt) : '',
+      v.surveySessionRating || '',
+      v.surveyComfortRating || '',
+      v.surveyFeedback || ''
+    ];
+  });
 
   const csv = [
     headers.join(','),
@@ -430,12 +457,18 @@ function switchAdminTab(tabName) {
   if (tabName === 'settings') {
     loadSettingsData();
   }
+
+  // Load data for surveys tab
+  if (tabName === 'surveys') {
+    loadSurveys();
+  }
 }
 
 async function loadSettingsData() {
   await loadBrandingSettings();
   await loadPrivacySettings();
   await loadHostsSettings();
+  await loadNotificationSettings();
 }
 
 // ============================================
@@ -770,4 +803,175 @@ function formatDateTime(isoString) {
     minute: '2-digit',
     hour12: true
   });
+}
+
+// ============================================
+// SURVEYS TAB
+// ============================================
+
+async function loadSurveys() {
+  const tbody = document.getElementById('surveysTableBody');
+  const fromDate = document.getElementById('surveyDateFrom').value;
+  const toDate = document.getElementById('surveyDateTo').value;
+  const ratingFilter = document.getElementById('surveyRatingFilter').value;
+
+  // Set default dates if not set
+  if (!fromDate) {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    document.getElementById('surveyDateFrom').value = thirtyDaysAgo.toISOString().split('T')[0];
+  }
+  if (!toDate) {
+    document.getElementById('surveyDateTo').value = new Date().toISOString().split('T')[0];
+  }
+
+  tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading...</td></tr>';
+
+  try {
+    const response = await visitorApi.getSurveys(
+      document.getElementById('surveyDateFrom').value,
+      document.getElementById('surveyDateTo').value,
+      ratingFilter
+    );
+    allSurveys = response.surveys || [];
+
+    // Update stats
+    updateSurveyStats(allSurveys);
+
+    if (allSurveys.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No survey responses found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = allSurveys.map(survey => {
+      const sessionBadge = getSessionRatingBadge(survey.surveySessionRating);
+      const comfortBadge = getComfortRatingBadge(survey.surveyComfortRating);
+      const participantName = survey.firstName && survey.lastName
+        ? `${escapeHtml(survey.firstName)} ${escapeHtml(survey.lastName)}`
+        : escapeHtml(survey.name || 'Unknown');
+
+      return `
+        <tr>
+          <td>${formatDateTime(survey.signedOutAt)}</td>
+          <td>${participantName}</td>
+          <td>${sessionBadge}</td>
+          <td>${comfortBadge}</td>
+          <td>${survey.surveyFeedback ? escapeHtml(survey.surveyFeedback) : '-'}</td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (error) {
+    console.error('Failed to load surveys:', error);
+    tbody.innerHTML = '<tr><td colspan="5" class="error">Failed to load surveys</td></tr>';
+  }
+}
+
+function updateSurveyStats(surveys) {
+  const total = surveys.length;
+  const comfortable = surveys.filter(s => s.surveyComfortRating === 'comfortable').length;
+  const okay = surveys.filter(s => s.surveyComfortRating === 'okay').length;
+  const uncomfortable = surveys.filter(s => s.surveyComfortRating === 'uncomfortable').length;
+
+  document.getElementById('surveyTotalCount').textContent = total;
+  document.getElementById('surveyComfortableCount').textContent = comfortable;
+  document.getElementById('surveyOkayCount').textContent = okay;
+  document.getElementById('surveyUncomfortableCount').textContent = uncomfortable;
+}
+
+function getSessionRatingBadge(rating) {
+  const labels = {
+    good: 'Good',
+    average: 'Average',
+    poor: 'Poor'
+  };
+  const classes = {
+    good: 'rating-good',
+    average: 'rating-okay',
+    poor: 'rating-poor'
+  };
+  return `<span class="rating-badge ${classes[rating] || ''}">${labels[rating] || rating || '-'}</span>`;
+}
+
+function getComfortRatingBadge(rating) {
+  const labels = {
+    comfortable: 'Comfortable',
+    okay: 'Okay',
+    uncomfortable: 'Uncomfortable'
+  };
+  const classes = {
+    comfortable: 'rating-good',
+    okay: 'rating-okay',
+    uncomfortable: 'rating-poor'
+  };
+  return `<span class="rating-badge ${classes[rating] || ''}">${labels[rating] || rating || '-'}</span>`;
+}
+
+function exportSurveysToCSV() {
+  if (allSurveys.length === 0) {
+    showToast('No data to export', true);
+    return;
+  }
+
+  const headers = ['Date/Time', 'First Name', 'Last Name', 'Session Rating', 'Comfort Rating', 'Feedback'];
+  const rows = allSurveys.map(s => {
+    const firstName = s.firstName || s.name?.split(' ')[0] || '';
+    const lastName = s.lastName || s.name?.split(' ').slice(1).join(' ') || '';
+
+    return [
+      formatDateTime(s.signedOutAt),
+      firstName,
+      lastName,
+      s.surveySessionRating || '',
+      s.surveyComfortRating || '',
+      s.surveyFeedback || ''
+    ];
+  });
+
+  const csv = [
+    headers.join(','),
+    ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `survey-responses-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  showToast('Survey data exported');
+}
+
+// ============================================
+// SETTINGS - NOTIFICATION EMAIL
+// ============================================
+
+async function loadNotificationSettings() {
+  const emailInput = document.getElementById('notificationEmail');
+  if (emailInput && settings.notificationEmail) {
+    emailInput.value = settings.notificationEmail;
+  }
+}
+
+async function saveNotificationEmail() {
+  const email = document.getElementById('notificationEmail').value.trim();
+
+  if (email && !isValidEmail(email)) {
+    showToast('Please enter a valid email address', true);
+    return;
+  }
+
+  try {
+    await settingsApi.save({ notificationEmail: email });
+    settings.notificationEmail = email;
+    showToast('Notification email saved');
+  } catch (error) {
+    showToast('Failed to save notification email', true);
+  }
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }

@@ -1334,3 +1334,228 @@ input, select, textarea {
   flex-shrink: 0;
   justify-content: center;
 }
+
+/* ============================================
+   FORM ROW (Side-by-side fields)
+   ============================================ */
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.form-group.half {
+  flex: 1;
+}
+
+/* ============================================
+   SURVEY MODAL
+   ============================================ */
+
+.survey-modal {
+  max-width: 520px;
+  text-align: left;
+}
+
+.survey-intro {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.survey-question {
+  margin-bottom: 28px;
+}
+
+.survey-question label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* Smiley Face Buttons */
+.smiley-options {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.smiley-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px;
+  background: var(--gray-50);
+  border: 3px solid var(--gray-200);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  min-width: 100px;
+}
+
+.smiley-btn:hover {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+}
+
+.smiley-btn.selected {
+  border-color: var(--navy);
+  background: rgba(30, 58, 95, 0.08);
+}
+
+.smiley-btn[data-value="good"].selected,
+.smiley-btn[data-value="comfortable"].selected {
+  border-color: var(--success);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.smiley-btn[data-value="average"].selected,
+.smiley-btn[data-value="okay"].selected {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.smiley-btn[data-value="poor"].selected,
+.smiley-btn[data-value="uncomfortable"].selected {
+  border-color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Smiley Icons (CSS drawn faces) */
+.smiley-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.smiley-icon.good {
+  background: var(--success);
+}
+
+.smiley-icon.average {
+  background: #f59e0b;
+}
+
+.smiley-icon.poor {
+  background: var(--danger);
+}
+
+/* Face features using pseudo-elements */
+.smiley-icon::before,
+.smiley-icon::after {
+  content: '';
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+}
+
+/* Eyes */
+.smiley-icon::before {
+  width: 8px;
+  height: 8px;
+  top: 18px;
+  left: 14px;
+  box-shadow: 26px 0 0 white;
+}
+
+/* Mouth */
+.smiley-icon.good::after {
+  width: 24px;
+  height: 12px;
+  background: transparent;
+  border: 3px solid white;
+  border-top: none;
+  border-radius: 0 0 24px 24px;
+  top: 32px;
+  left: 16px;
+}
+
+.smiley-icon.average::after {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+  top: 35px;
+  left: 18px;
+}
+
+.smiley-icon.poor::after {
+  width: 24px;
+  height: 12px;
+  background: transparent;
+  border: 3px solid white;
+  border-bottom: none;
+  border-radius: 24px 24px 0 0;
+  top: 32px;
+  left: 16px;
+}
+
+.smiley-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gray-600);
+}
+
+.smiley-btn.selected .smiley-label {
+  color: var(--gray-800);
+  font-weight: 600;
+}
+
+/* Feedback Section */
+.survey-feedback {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--gray-200);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.survey-feedback label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 10px;
+}
+
+.survey-feedback textarea {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  min-height: 80px;
+  transition: var(--transition);
+}
+
+.survey-feedback textarea:focus {
+  outline: none;
+  border-color: var(--navy);
+}
+
+.survey-feedback textarea::placeholder {
+  color: var(--gray-400);
+}
+
+.survey-modal .modal-actions {
+  margin-top: 32px;
+  justify-content: center;
+}
+
+.survey-modal .btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

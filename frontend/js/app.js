@@ -19,6 +19,10 @@ let countdownTimer = null;
 let selectedVisitorForSignOut = null;
 let deferredInstallPrompt = null;
 
+// Survey state
+let surveySessionRating = null;
+let surveyComfortRating = null;
+
 // ============================================
 // INITIALIZATION
 // ============================================
@@ -30,9 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
 async function init() {
   // Load settings (branding)
   await loadSettings();
-
-  // Load hosts for dropdown
-  await loadHosts();
 
   // Set up form handlers
   setupFormHandlers();
@@ -115,39 +116,6 @@ function closePrivacyPolicy() {
   }
 }
 
-async function loadHosts() {
-  try {
-    const response = await hostsApi.getAll();
-    hosts = response.hosts || [];
-    populateHostDropdown();
-  } catch (error) {
-    console.error('Failed to load hosts:', error);
-    hosts = [];
-    populateHostDropdown();
-  }
-}
-
-function populateHostDropdown() {
-  const select = document.getElementById('hostSelect');
-  if (!select) return;
-
-  select.innerHTML = '<option value="">Select...</option>';
-
-  // Add hosts from database
-  hosts.forEach(host => {
-    const option = document.createElement('option');
-    option.value = host.name;
-    option.textContent = host.name;
-    select.appendChild(option);
-  });
-
-  // Always add "Unsure" option at the end
-  const unsureOption = document.createElement('option');
-  unsureOption.value = 'Unsure';
-  unsureOption.textContent = 'Unsure';
-  select.appendChild(unsureOption);
-}
-
 function setupFormHandlers() {
   // Sign in form
   document.getElementById('signInForm').addEventListener('submit', handleSignIn);
@@ -160,26 +128,29 @@ function setupFormHandlers() {
 async function handleSignIn(e) {
   e.preventDefault();
 
-  const visitorName = document.getElementById('visitorName').value.trim();
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
   const visitorPhone = document.getElementById('visitorPhone').value.trim();
-  const hostSelect = document.getElementById('hostSelect');
-  const hostName = hostSelect.value;
+  const purposeSelect = document.getElementById('purposeSelect');
+  const purpose = purposeSelect.value;
 
-  if (!visitorName || !hostName) {
+  if (!firstName || !lastName || !purpose) {
     showToast('Please fill in all required fields', true);
     return;
   }
 
   try {
     await visitorApi.signIn({
-      name: visitorName,
+      firstName: firstName,
+      lastName: lastName,
       phone: visitorPhone || null,
-      hostName: hostName
+      purpose: purpose
     });
 
     // Show success screen
+    const fullName = `${firstName} ${lastName}`;
     document.getElementById('successTitle').textContent = 'Signed In!';
-    document.getElementById('successMessage').textContent = `Welcome, ${visitorName}`;
+    document.getElementById('successMessage').textContent = `Welcome, ${fullName}`;
 
     showScreen('successScreen');
 
@@ -231,7 +202,7 @@ function renderSignOutList(visitors, isSearchResult = false) {
 
   list.innerHTML = visitors.map(visitor => `
     <div class="visitor-item" onclick="selectVisitorForSignOut('${visitor.id}')">
-      <div class="visitor-item-name">${escapeHtml(visitor.name)}</div>
+      <div class="visitor-item-name">${escapeHtml(visitor.name || `${visitor.firstName || ''} ${visitor.lastName || ''}`.trim())}</div>
       <div class="visitor-item-detail">Signed in at ${formatTime(visitor.signedInAt)}</div>
     </div>
   `).join('');
@@ -246,9 +217,10 @@ function filterSignOutList() {
     return;
   }
 
-  const filtered = currentVisitors.filter(v =>
-    v.name.toLowerCase().includes(searchTerm)
-  );
+  const filtered = currentVisitors.filter(v => {
+    const fullName = v.name || `${v.firstName || ''} ${v.lastName || ''}`.trim();
+    return fullName.toLowerCase().includes(searchTerm);
+  });
 
   renderSignOutList(filtered, true);
 }
@@ -259,12 +231,18 @@ function selectVisitorForSignOut(visitorId) {
 
   selectedVisitorForSignOut = visitor;
 
-  // Update confirm modal
-  document.getElementById('confirmVisitorName').textContent =
-    `Sign out ${visitor.name}?`;
+  const visitorName = visitor.name || `${visitor.firstName || ''} ${visitor.lastName || ''}`.trim();
 
-  // Show modal
-  document.getElementById('signOutConfirmModal').style.display = 'flex';
+  // Check if this is a participant - show survey instead of confirm
+  if (visitor.purpose === 'participant') {
+    // Show survey modal
+    resetSurvey();
+    document.getElementById('surveyModal').style.display = 'flex';
+  } else {
+    // Show regular confirm modal for visitors/staff
+    document.getElementById('confirmVisitorName').textContent = `Sign out ${visitorName}?`;
+    document.getElementById('signOutConfirmModal').style.display = 'flex';
+  }
 }
 
 function closeSignOutConfirm() {
@@ -276,7 +254,8 @@ async function confirmSignOut() {
   if (!selectedVisitorForSignOut) return;
 
   // Save visitor name before closeSignOutConfirm() clears selectedVisitorForSignOut
-  const visitorName = selectedVisitorForSignOut.name;
+  const visitorName = selectedVisitorForSignOut.name ||
+    `${selectedVisitorForSignOut.firstName || ''} ${selectedVisitorForSignOut.lastName || ''}`.trim();
 
   try {
     await visitorApi.signOut(selectedVisitorForSignOut.id);
@@ -302,6 +281,108 @@ async function confirmSignOut() {
 
   } catch (error) {
     showToast('Failed to sign out. Please try again.', true);
+  }
+}
+
+// ============================================
+// SURVEY
+// ============================================
+
+function resetSurvey() {
+  surveySessionRating = null;
+  surveyComfortRating = null;
+
+  // Reset all smiley buttons
+  document.querySelectorAll('.smiley-btn').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+
+  // Hide feedback section
+  document.getElementById('feedbackSection').style.display = 'none';
+  document.getElementById('surveyFeedback').value = '';
+
+  // Disable submit button
+  document.getElementById('surveySubmitBtn').disabled = true;
+}
+
+function selectSmiley(question, value) {
+  const containerId = question === 'session' ? 'sessionRatingOptions' : 'comfortRatingOptions';
+  const container = document.getElementById(containerId);
+
+  // Remove selected from all buttons in this question
+  container.querySelectorAll('.smiley-btn').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+
+  // Add selected to clicked button
+  const selectedBtn = container.querySelector(`[data-value="${value}"]`);
+  if (selectedBtn) {
+    selectedBtn.classList.add('selected');
+  }
+
+  // Update state
+  if (question === 'session') {
+    surveySessionRating = value;
+  } else {
+    surveyComfortRating = value;
+
+    // Show/hide feedback section based on comfort rating
+    const feedbackSection = document.getElementById('feedbackSection');
+    if (value === 'uncomfortable') {
+      feedbackSection.style.display = 'block';
+    } else {
+      feedbackSection.style.display = 'none';
+    }
+  }
+
+  // Enable submit if both questions answered
+  updateSurveySubmitButton();
+}
+
+function updateSurveySubmitButton() {
+  const submitBtn = document.getElementById('surveySubmitBtn');
+  submitBtn.disabled = !(surveySessionRating && surveyComfortRating);
+}
+
+async function submitSurvey() {
+  if (!selectedVisitorForSignOut || !surveySessionRating || !surveyComfortRating) return;
+
+  const visitorName = selectedVisitorForSignOut.name ||
+    `${selectedVisitorForSignOut.firstName || ''} ${selectedVisitorForSignOut.lastName || ''}`.trim();
+  const feedback = document.getElementById('surveyFeedback').value.trim();
+
+  try {
+    await visitorApi.signOutWithSurvey(selectedVisitorForSignOut.id, {
+      sessionRating: surveySessionRating,
+      comfortRating: surveyComfortRating,
+      feedback: feedback || null
+    });
+
+    // Close survey modal
+    document.getElementById('surveyModal').style.display = 'none';
+
+    // Clear selected visitor
+    selectedVisitorForSignOut = null;
+
+    // Show success screen
+    document.getElementById('successTitle').textContent = 'Signed Out!';
+    document.getElementById('successMessage').textContent = `Thank you for your feedback, ${visitorName}`;
+
+    showScreen('successScreen');
+
+    // Clear search
+    document.getElementById('signOutSearch').value = '';
+
+    // Reload visitors list
+    await loadSignedInVisitors();
+
+    // Start countdown to return to welcome
+    startCountdown(5, () => {
+      showScreen('welcomeScreen');
+    });
+
+  } catch (error) {
+    showToast('Failed to submit survey. Please try again.', true);
   }
 }
 

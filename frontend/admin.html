@@ -30,6 +30,7 @@
         <h1>Visitor Log</h1>
         <nav class="admin-nav">
           <button type="button" class="nav-tab active" data-tab="visitors" onclick="switchAdminTab('visitors')">Visitors</button>
+          <button type="button" class="nav-tab" data-tab="surveys" onclick="switchAdminTab('surveys')">Surveys</button>
           <button type="button" class="nav-tab" data-tab="settings" onclick="switchAdminTab('settings')">Settings</button>
         </nav>
         <button type="button" class="btn-logout" onclick="logout()">Logout</button>
@@ -80,9 +81,9 @@
 
               <div class="trend-card">
                 <div class="trend-icon host">&#128100;</div>
-                <h4>Top Host</h4>
+                <h4>Top Purpose</h4>
                 <div class="trend-value" id="topHost">-</div>
-                <div class="trend-label" id="topHostLabel">Most visited</div>
+                <div class="trend-label" id="topHostLabel">Most selected</div>
               </div>
 
               <div class="trend-card">
@@ -122,15 +123,85 @@
               <thead>
                 <tr>
                   <th>Date/Time In</th>
-                  <th>Visitor Name</th>
+                  <th>First Name</th>
+                  <th>Last Name</th>
                   <th>Phone</th>
-                  <th>Host</th>
+                  <th>Purpose</th>
                   <th>Status</th>
                   <th>Date/Time Out</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="visitorsTableBody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Surveys Tab -->
+        <div id="surveysTab" class="admin-tab-content">
+          <div class="surveys-header">
+            <h2>Participant Feedback</h2>
+            <p class="section-description">View survey responses from participants when they sign out.</p>
+          </div>
+
+          <!-- Survey Stats -->
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-value" id="surveyTotalCount">0</div>
+              <div class="stat-label">Total Surveys</div>
+            </div>
+            <div class="stat-card stat-good">
+              <div class="stat-value" id="surveyComfortableCount">0</div>
+              <div class="stat-label">Comfortable</div>
+            </div>
+            <div class="stat-card stat-warning">
+              <div class="stat-value" id="surveyOkayCount">0</div>
+              <div class="stat-label">Okay</div>
+            </div>
+            <div class="stat-card stat-danger">
+              <div class="stat-value" id="surveyUncomfortableCount">0</div>
+              <div class="stat-label">Uncomfortable</div>
+            </div>
+          </div>
+
+          <!-- Survey Filters -->
+          <div class="filters-row">
+            <div class="filter-group">
+              <label for="surveyDateFrom">From</label>
+              <input type="date" id="surveyDateFrom">
+            </div>
+            <div class="filter-group">
+              <label for="surveyDateTo">To</label>
+              <input type="date" id="surveyDateTo">
+            </div>
+            <div class="filter-group">
+              <label for="surveyRatingFilter">Comfort Rating</label>
+              <select id="surveyRatingFilter">
+                <option value="all">All</option>
+                <option value="comfortable">Comfortable</option>
+                <option value="okay">Okay</option>
+                <option value="uncomfortable">Uncomfortable</option>
+              </select>
+            </div>
+            <button type="button" class="btn-primary" onclick="loadSurveys()">Apply</button>
+            <button type="button" class="btn-secondary" onclick="exportSurveysToCSV()">Export CSV</button>
+          </div>
+
+          <!-- Surveys Table -->
+          <div class="table-container">
+            <table id="surveysTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Participant</th>
+                  <th>Session Rating</th>
+                  <th>Comfort Rating</th>
+                  <th>Feedback</th>
+                </tr>
+              </thead>
+              <tbody id="surveysTableBody">
                 <!-- Populated by JS -->
               </tbody>
             </table>
@@ -205,18 +276,17 @@
               </div>
             </section>
 
-            <!-- Hosts Section -->
+            <!-- Notification Settings Section -->
             <section class="settings-section">
-              <h2>Hosts</h2>
-              <p class="section-description">Manage the list of hosts that visitors can select when signing in.</p>
+              <h2>Notification Settings</h2>
+              <p class="section-description">Configure email notifications for participant feedback.</p>
               <div class="setting-card">
-                <div id="hostsList" class="hosts-list">
-                  <!-- Populated by JS -->
+                <div class="form-group">
+                  <label for="notificationEmail">Comfort Alert Email</label>
+                  <input type="email" id="notificationEmail" placeholder="info@vitalhub.org.au">
+                  <p class="field-hint">When a participant reports feeling "Uncomfortable", an email alert will be sent to this address.</p>
                 </div>
-                <div class="add-host-row">
-                  <input type="text" id="newHostInput" placeholder="Add new host name...">
-                  <button type="button" class="btn-primary btn-small" onclick="addHost()">Add</button>
-                </div>
+                <button type="button" class="btn-primary btn-small" onclick="saveNotificationEmail()">Save Email</button>
               </div>
             </section>
 

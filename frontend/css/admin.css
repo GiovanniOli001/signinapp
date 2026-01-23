@@ -571,6 +571,61 @@ tbody tr:hover {
 }
 
 /* ============================================
+   Survey Stats Cards
+   ============================================ */
+.stat-card.stat-good .stat-value {
+  color: var(--success);
+}
+
+.stat-card.stat-warning .stat-value {
+  color: var(--warning);
+}
+
+.stat-card.stat-danger .stat-value {
+  color: var(--danger);
+}
+
+/* ============================================
+   Survey Rating Badges
+   ============================================ */
+.rating-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.rating-good {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.rating-okay {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.rating-poor {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ============================================
+   Surveys Tab Header
+   ============================================ */
+.surveys-header {
+  margin-bottom: 24px;
+}
+
+.surveys-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 8px;
+}
+
+/* ============================================
    Form
    ============================================ */
 .form-group {

@@ -56,11 +56,21 @@ const visitorApi = {
   },
 
   /**
-   * Sign out a visitor
+   * Sign out a visitor (no survey)
    */
   async signOut(visitorId) {
     return apiRequest(`/api/visitors/${visitorId}/signout`, {
       method: 'POST'
+    });
+  },
+
+  /**
+   * Sign out a visitor with survey (participants)
+   */
+  async signOutWithSurvey(visitorId, surveyData) {
+    return apiRequest(`/api/visitors/${visitorId}/signout-with-survey`, {
+      method: 'POST',
+      body: JSON.stringify(surveyData)
     });
   },
 
@@ -83,6 +93,19 @@ const visitorApi = {
    */
   async getTodayStats() {
     return apiRequest('/api/visitors/stats/today');
+  },
+
+  /**
+   * Get survey responses (admin)
+   */
+  async getSurveys(fromDate, toDate, ratingFilter = 'all') {
+    let url = `/api/visitors/surveys`;
+    const params = [];
+    if (fromDate) params.push(`from=${fromDate}`);
+    if (toDate) params.push(`to=${toDate}`);
+    if (ratingFilter && ratingFilter !== 'all') params.push(`rating=${ratingFilter}`);
+    if (params.length > 0) url += `?${params.join('&')}`;
+    return apiRequest(url);
   }
 };
 
