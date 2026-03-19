@@ -231,9 +231,9 @@ export async function handleVisitors(
     let query = `
       SELECT id, name, first_name as firstName, last_name as lastName,
              purpose, signed_in_at as signedInAt, signed_out_at as signedOutAt,
-             survey_session_rating as sessionRating,
-             survey_comfort_rating as comfortRating,
-             survey_feedback as feedback
+             survey_session_rating as surveySessionRating,
+             survey_comfort_rating as surveyComfortRating,
+             survey_feedback as surveyFeedback
       FROM visitors
       WHERE purpose = 'participant' AND survey_session_rating IS NOT NULL
     `;
@@ -269,9 +269,9 @@ export async function handleVisitors(
       SELECT id, name, first_name as firstName, last_name as lastName,
              phone, host_name as hostName, purpose,
              signed_in_at as signedInAt, signed_out_at as signedOutAt,
-             survey_session_rating as sessionRating,
-             survey_comfort_rating as comfortRating,
-             survey_feedback as feedback
+             survey_session_rating as surveySessionRating,
+             survey_comfort_rating as surveyComfortRating,
+             survey_feedback as surveyFeedback
       FROM visitors
       WHERE DATE(signed_in_at) >= ? AND DATE(signed_in_at) <= ?
       ORDER BY signed_in_at DESC
