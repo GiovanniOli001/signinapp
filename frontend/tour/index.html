@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SimpleSignOn - Take a Tour</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* --- Top bar --- */
+    .tour-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+    }
+
+    .tour-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      color: #1a1a2e;
+      text-decoration: none;
+    }
+
+    .tour-header-brand svg { width: 28px; height: 28px; }
+
+    .tour-header-actions { display: flex; gap: 12px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn-primary { background: #6366f1; color: #fff; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-outline { background: transparent; color: #6366f1; border: 1.5px solid #6366f1; }
+    .btn-outline:hover { background: #f0f0ff; }
+
+    /* --- Layout --- */
+    .tour-container {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* --- Left panel: annotation --- */
+    .tour-panel {
+      position: absolute;
+      top: 56px;
+      left: 0;
+      bottom: 0;
+      width: 340px;
+      background: #fff;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 40px 32px;
+      z-index: 20;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .tour-panel.fade-enter {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .tour-panel.fade-active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tour-panel-category {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      width: fit-content;
+    }
+
+    .cat-operations { background: #eff6ff; color: #3b82f6; }
+    .cat-compliance { background: #fef3c7; color: #d97706; }
+    .cat-engagement { background: #f0fdf4; color: #16a34a; }
+    .cat-settings { background: #faf5ff; color: #9333ea; }
+    .cat-kiosk { background: #fce4ec; color: #e11d48; }
+
+    .tour-panel-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: #1a1a2e;
+    }
+
+    .tour-panel-body {
+      font-size: 15px;
+      line-height: 1.7;
+      color: #64748b;
+    }
+
+    .tour-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .tour-step-count {
+      font-size: 13px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .tour-nav { display: flex; gap: 8px; }
+
+    .tour-btn {
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .tour-btn-back { background: #f1f5f9; color: #64748b; }
+    .tour-btn-back:hover { background: #e2e8f0; }
+    .tour-btn-next { background: #6366f1; color: #fff; }
+    .tour-btn-next:hover { background: #4f46e5; }
+    .tour-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* --- Right panel: screenshot --- */
+    .tour-screen {
+      position: absolute;
+      top: 56px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    /* --- Browser frame --- */
+    .browser-frame {
+      width: 100%;
+      max-width: 1300px;
+      background: #1e1e2e;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.05);
+    }
+
+    .browser-chrome {
+      height: 36px;
+      background: #2a2a3d;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 7px;
+    }
+
+    .browser-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .browser-dot.red { background: #ff5f57; }
+    .browser-dot.yellow { background: #febc2e; }
+    .browser-dot.green { background: #28c840; }
+
+    .browser-url {
+      flex: 1;
+      margin-left: 12px;
+      background: #1e1e2e;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: #94a3b8;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .browser-viewport {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: #f8f9fc;
+    }
+
+    .browser-viewport img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top left;
+      display: block;
+      transition: opacity 0.35s ease;
+    }
+
+    .browser-viewport img.fade-out { opacity: 0; }
+
+    /* --- Progress bar --- */
+    .tour-progress {
+      height: 3px;
+      background: #e2e8f0;
+    }
+
+    .tour-progress-bar {
+      height: 100%;
+      background: #6366f1;
+      transition: width 0.4s ease;
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* --- Kiosk: standalone portrait iPad --- */
+    .kiosk-standalone {
+      display: none;
+    }
+
+    .kiosk-standalone.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .kiosk-ipad {
+      position: relative;
+      background: #0a0a0a;
+      border-radius: 32px;
+      padding: 18px 14px;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.08),
+        0 0 0 2px #222,
+        0 40px 100px rgba(0,0,0,0.4);
+      max-height: calc(100vh - 120px);
+    }
+
+    .kiosk-ipad::before {
+      content: '';
+      display: block;
+      width: 8px;
+      height: 8px;
+      background: radial-gradient(circle, #1a1a2e 30%, #111 70%);
+      border-radius: 50%;
+      box-shadow: 0 0 0 1.5px #333;
+      margin: 0 auto 10px;
+    }
+
+    .kiosk-ipad::after {
+      content: '';
+      display: block;
+      width: 40px;
+      height: 5px;
+      background: #1a1a1a;
+      border-radius: 3px;
+      margin: 10px auto 0;
+      box-shadow: 0 0 0 1px #333;
+    }
+
+    .kiosk-ipad img {
+      display: block;
+      height: 100%;
+      max-height: calc(100vh - 190px);
+      width: auto;
+      border-radius: 6px;
+    }
+
+    /* --- Welcome overlay --- */
+    .tour-welcome-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 15, 35, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s;
+    }
+
+    .tour-welcome-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .tour-welcome-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px 48px;
+      max-width: 520px;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+    }
+
+    .tour-welcome-card h2 { font-size: 24px; font-weight: 800; margin-bottom: 12px; }
+    .tour-welcome-card p { font-size: 15px; color: #64748b; line-height: 1.6; margin-bottom: 8px; }
+    .tour-welcome-card .btn { margin-top: 20px; padding: 12px 32px; font-size: 15px; }
+
+    .tour-welcome-logo { width: 56px; height: 56px; margin: 0 auto 16px; }
+
+    /* --- End overlay --- */
+    .tour-end-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 15, 35, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .tour-end-overlay.visible { opacity: 1; pointer-events: all; }
+
+    .tour-end-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px 48px;
+      max-width: 520px;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+    }
+
+    .tour-end-card h2 { font-size: 24px; font-weight: 800; margin-bottom: 12px; }
+    .tour-end-card p { font-size: 15px; color: #64748b; line-height: 1.6; margin-bottom: 8px; }
+
+    .tour-end-actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
+
+    /* --- Keyboard hint --- */
+    .keyboard-hint {
+      position: fixed;
+      bottom: 16px;
+      right: 24px;
+      font-size: 12px;
+      color: #94a3b8;
+      z-index: 50;
+    }
+
+    kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 11px;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 900px) {
+      .tour-container { flex-direction: column; }
+      .tour-panel { width: 100%; min-width: 0; padding: 20px 24px; border-right: none; border-bottom: 1px solid #e2e8f0; }
+      .tour-screen { padding: 12px; }
+      .browser-frame { max-width: 100%; }
+      .tour-panel-title { font-size: 18px; }
+      .tour-panel-body { font-size: 14px; }
+      .tour-controls { margin-top: 16px; padding-top: 12px; }
+    }
+
+    @media (max-width: 600px) {
+      .tour-header-actions .btn span { display: none; }
+      .kiosk-ipad { border-radius: 16px; padding: 10px 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="tour-header">
+    <a href="/" class="tour-header-brand">
+      <svg viewBox="0 0 24 24" fill="none">
+        <rect width="24" height="24" rx="6" fill="#6366f1"/>
+        <path d="M7 12l3 3 7-7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      SimpleSignOn
+    </a>
+    <div class="tour-header-actions">
+      <a href="https://simplesignon.app" class="btn btn-outline"><span>Back to site</span></a>
+      <a href="https://simplesignon.app/register" class="btn btn-primary"><span>Start free trial</span></a>
+    </div>
+  </header>
+
+  <!-- Main layout: panel + screenshot -->
+  <div class="tour-container">
+    <!-- Left: annotation panel -->
+    <div class="tour-panel fade-enter" id="tourPanel">
+      <div class="tour-panel-category cat-operations" id="panelCategory">Operations</div>
+      <div class="tour-panel-title" id="panelTitle">Dashboard</div>
+      <div class="tour-panel-body" id="panelBody">Your command centre.</div>
+      <div class="tour-controls">
+        <span class="tour-step-count" id="stepCount">1 of 14</span>
+        <div class="tour-nav">
+          <button class="tour-btn tour-btn-back" id="btnBack" onclick="prevStep()">Back</button>
+          <button class="tour-btn tour-btn-next" id="btnNext" onclick="nextStep()">Next</button>
+        </div>
+      </div>
+      <div class="tour-progress" style="position:absolute;bottom:0;left:0;right:0;">
+        <div class="tour-progress-bar" id="progressBar"></div>
+      </div>
+    </div>
+
+    <!-- Right: screenshot area -->
+    <div class="tour-screen">
+      <!-- Admin: browser frame -->
+      <div class="browser-frame" id="browserFrame">
+        <div class="browser-chrome">
+          <div class="browser-dot red"></div>
+          <div class="browser-dot yellow"></div>
+          <div class="browser-dot green"></div>
+          <div class="browser-url" id="browserUrl">simplesignon.app/dashboard</div>
+        </div>
+        <div class="browser-viewport" id="viewport">
+          <img id="tourImage" src="screenshots/01-dashboard.png" alt="SimpleSignOn Dashboard">
+        </div>
+      </div>
+
+      <!-- Kiosk: iPad -->
+      <div class="kiosk-standalone" id="kioskStandalone">
+        <div class="kiosk-ipad">
+          <img id="kioskImage" src="screenshots/09-kiosk-welcome.png" alt="Kiosk Screen">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Welcome overlay -->
+  <div class="tour-welcome-overlay" id="welcomeOverlay">
+    <div class="tour-welcome-card">
+      <div class="tour-welcome-logo">
+        <svg viewBox="0 0 56 56" fill="none">
+          <rect width="56" height="56" rx="14" fill="#6366f1"/>
+          <path d="M16 28l8 8 16-16" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2>Welcome to SimpleSignOn</h2>
+      <p>The modern visitor management platform that keeps your workplace secure, compliant, and welcoming.</p>
+      <p>This interactive tour will walk you through the key features in about 2 minutes.</p>
+      <button class="btn btn-primary" onclick="startTour()">Let's go</button>
+    </div>
+  </div>
+
+  <!-- End overlay -->
+  <div class="tour-end-overlay" id="endOverlay">
+    <div class="tour-end-card">
+      <div class="tour-welcome-logo">
+        <svg viewBox="0 0 56 56" fill="none">
+          <rect width="56" height="56" rx="14" fill="#16a34a"/>
+          <path d="M16 28l8 8 16-16" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2>That's the tour!</h2>
+      <p>SimpleSignOn gives you everything you need to manage visitors, contractors, deliveries, and compliance - all from one platform.</p>
+      <p>Ready to try it yourself?</p>
+      <div class="tour-end-actions">
+        <button class="btn btn-outline" onclick="restartTour()">Restart tour</button>
+        <a href="https://simplesignon.app/register" class="btn btn-primary">Start free trial</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard hints -->
+  <div class="keyboard-hint">
+    Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate
+  </div>
+
+  <script>
+    const steps = [
+      {
+        image: 'screenshots/01-dashboard.png',
+        url: 'simplesignon.app/dashboard',
+        category: 'Operations',
+        categoryClass: 'cat-operations',
+        title: 'Real-Time Dashboard',
+        body: 'See who\'s on site right now. Track signed-in visitors, total arrivals, departures, and average visit duration at a glance. The visitor trend chart shows patterns over 7, 14, or 30 days.',
+        isKiosk: false
+      },
+      {
+        image: 'screenshots/02-visitors.png',
+        url: 'simplesignon.app/visitors',
+        category: 'Operations',
+        categoryClass: 'cat-operations',
+        title: 'Visitor Log',
+        body: 'A complete, searchable record of every sign-in. Filter by date range or status, search by name, and export everything to CSV for compliance reporting.',
+        isKiosk: false
+      },
+      {
+        image: 'screenshots/03-deliveries.png',
+        url: 'simplesignon.app/deliveries',
+        category: 'Operations',
+        categoryClass: 'cat-operations',
+        title: 'Delivery Tracking',
+        body: 'Log incoming packages with carrier details, tracking numbers, and recipient info. Track collection status so nothing gets lost in the mailroom.',
+        isKiosk: false
+      },
+      {
+        image: 'screenshots/04-evacuation.png',
+        url: 'simplesignon.app/evacuation',
+        category: 'Operations',
+        categoryClass: 'cat-operations',
+        title: 'Emergency Evacuation',
+        body: 'Instant muster list of everyone currently on site. Auto-refreshes every 10 seconds so your roll call is always accurate. Filter by site and export for emergency records.',
+        isKiosk: false
+      },
+      {
+        image: 'screenshots/05-contractors.png',
+        url: 'simplesignon.app/contractors',
+        category: 'Compliance',
+        categoryClass: 'cat-compliance',
+        title: 'Contractor Management',
+        body: 'Register contractors with company details, contact info, and compliance status. Set them as Active, Suspended, or Blocked to control site access.',
+        isKiosk: false
+      },
+      {
+        image: 'screenshots/06-surveys.png',
+        url: 'simplesignon.app/surveys',
+        category: 'Engagement',
+        categoryClass: 'cat-engagement',
+        title: 'Survey Analytics',
+        body: 'Visualise visitor feedback with emoji-based sentiment breakdowns. See response rates, identify trends, and filter by date range. Designed for child safety and comfort compliance.',
+        isKiosk: false
+      },
+      {
+        image: 'screenshots/07-survey-builder.png',
+        url: 'simplesignon.app/survey-builder',
+        category: 'Engagement',
+        categoryClass: 'cat-engagement',
+        title: 'Survey Builder',
+        body: 'Create custom feedback surveys that appear after sign-out. Set them active per-site, choose trigger timing, and build questions with emoji rating scales. No code required.',
+        isKiosk: false
+      },
+      {
+        image: 'screenshots/08-branding.png',
+        url: 'simplesignon.app/branding',
+        category: 'Settings',
+        categoryClass: 'cat-settings',
+        title: 'Custom Branding',
+        body: 'Make it yours. Upload your logo, set a background image, pick theme colours, configure a custom domain, and brand your outgoing emails. Each site can have its own overrides.',
+        isKiosk: false
+      },
+      {
+        image: 'screenshots/10-sites.png',
+        url: 'simplesignon.app/sites',
+        category: 'Settings',
+        categoryClass: 'cat-settings',
+        title: 'Multi-Site Management',
+        body: 'Manage multiple physical locations from one account. Each site gets its own kiosk URL, QR code, timezone, and branding. Add or remove sites as your organisation grows.',
+        isKiosk: false
+      },
+      // --- Kiosk screens ---
+      {
+        image: 'screenshots/09-kiosk-welcome.png',
+        category: 'Kiosk',
+        categoryClass: 'cat-kiosk',
+        title: 'Visitor Kiosk',
+        body: 'The touch-friendly iPad kiosk your visitors see on arrival. Sign in, sign out, scan a QR code, log a delivery, or check in as a contractor - all from one welcoming screen with your branding.',
+        isKiosk: true
+      },
+      {
+        image: 'screenshots/11-kiosk-signin.png',
+        category: 'Kiosk',
+        categoryClass: 'cat-kiosk',
+        title: 'Visitor Sign-In Form',
+        body: 'Visitors enter their name, phone, and select a purpose of visit. Customisable fields let you capture exactly the data you need. Privacy consent is built in.',
+        isKiosk: true
+      },
+      {
+        image: 'screenshots/14-kiosk-agreement.png',
+        category: 'Kiosk',
+        categoryClass: 'cat-kiosk',
+        title: 'Document Signing',
+        body: 'Present site policies, NDAs, or safety documents that visitors must acknowledge before completing sign-in. Full document text with "I Agree & Sign" or "Skip" options.',
+        isKiosk: true
+      },
+      {
+        image: 'screenshots/12-kiosk-delivery.png',
+        category: 'Kiosk',
+        categoryClass: 'cat-kiosk',
+        title: 'Kiosk Delivery Logging',
+        body: 'Couriers can log deliveries directly at the kiosk without staff assistance. Enter carrier name, tracking number, recipient, and description. Notifications are sent automatically.',
+        isKiosk: true
+      },
+      {
+        image: 'screenshots/13-kiosk-contractor.png',
+        category: 'Kiosk',
+        categoryClass: 'cat-kiosk',
+        title: 'Contractor Check-In',
+        body: 'Pre-registered contractors check in by email lookup. Their compliance status, documents, and access permissions are verified automatically before granting entry.',
+        isKiosk: true
+      }
+    ];
+
+    let currentStep = 0;
+    let tourStarted = false;
+
+    const tourPanel = document.getElementById('tourPanel');
+    const tourImage = document.getElementById('tourImage');
+    const browserFrame = document.getElementById('browserFrame');
+    const kioskStandalone = document.getElementById('kioskStandalone');
+    const kioskImage = document.getElementById('kioskImage');
+    const browserUrl = document.getElementById('browserUrl');
+    const progressBar = document.getElementById('progressBar');
+    const panelTitle = document.getElementById('panelTitle');
+    const panelBody = document.getElementById('panelBody');
+    const panelCategory = document.getElementById('panelCategory');
+    const stepCount = document.getElementById('stepCount');
+    const btnBack = document.getElementById('btnBack');
+    const btnNext = document.getElementById('btnNext');
+
+    function startTour() {
+      document.getElementById('welcomeOverlay').classList.add('hidden');
+      tourStarted = true;
+      showStep(0);
+    }
+
+    function restartTour() {
+      document.getElementById('endOverlay').classList.remove('visible');
+      currentStep = 0;
+      showStep(0);
+    }
+
+    function showStep(index) {
+      const step = steps[index];
+
+      // Fade out panel
+      tourPanel.classList.remove('fade-active');
+      tourPanel.classList.add('fade-enter');
+
+      // Progress
+      const progress = ((index + 1) / steps.length * 100) + '%';
+      progressBar.style.width = progress;
+
+      // Swap screenshot
+      if (step.isKiosk) {
+        browserFrame.style.display = 'none';
+        kioskStandalone.classList.add('active');
+        kioskImage.src = step.image;
+      } else {
+        kioskStandalone.classList.remove('active');
+        browserFrame.style.display = '';
+        tourImage.classList.add('fade-out');
+        setTimeout(() => {
+          tourImage.src = step.image;
+          tourImage.onload = () => tourImage.classList.remove('fade-out');
+        }, 150);
+        browserUrl.textContent = step.url;
+      }
+
+      // Update panel content
+      setTimeout(() => {
+        panelCategory.textContent = step.category;
+        panelCategory.className = 'tour-panel-category ' + step.categoryClass;
+        panelTitle.textContent = step.title;
+        panelBody.textContent = step.body;
+        stepCount.textContent = (index + 1) + ' of ' + steps.length;
+
+        btnBack.disabled = index === 0;
+        btnNext.textContent = index === steps.length - 1 ? 'Finish' : 'Next';
+
+        // Fade in
+        tourPanel.classList.remove('fade-enter');
+        tourPanel.classList.add('fade-active');
+      }, 200);
+    }
+
+    function nextStep() {
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        showStep(currentStep);
+      } else {
+        tourPanel.classList.remove('fade-active');
+        tourPanel.classList.add('fade-enter');
+        document.getElementById('endOverlay').classList.add('visible');
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        showStep(currentStep);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (!tourStarted) {
+        if (e.key === 'Enter' || e.key === ' ') { startTour(); e.preventDefault(); }
+        return;
+      }
+      if (e.key === 'ArrowRight' || e.key === ' ') { nextStep(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { prevStep(); e.preventDefault(); }
+      else if (e.key === 'Escape') { window.location.href = 'https://simplesignon.app'; }
+    });
+
+    steps.forEach(step => { const img = new Image(); img.src = step.image; });
+  </script>
+</body>
+</html>
